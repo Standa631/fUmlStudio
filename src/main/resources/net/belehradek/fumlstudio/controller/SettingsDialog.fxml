@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <TitledPane collapsible="false" prefWidth="500.0" text="New diagram">
+         <content>
+            <VBox alignment="CENTER">
+               <children>
+                  <GridPane>
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="234.0" minWidth="10.0" prefWidth="148.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" maxWidth="330.0" minWidth="10.0" prefWidth="330.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                        <Label text="Diagram name:" />
+                        <Label text="Diagram type:" GridPane.rowIndex="1" />
+                        <TextField fx:id="diagramName" prefHeight="25.0" prefWidth="266.0" GridPane.columnIndex="1" />
+                        <RadioButton fx:id="typeActivity" mnemonicParsing="false" text="Activity diagram" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="type" />
+                           </toggleGroup>
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                        </RadioButton>
+                        <RadioButton fx:id="typeClass" mnemonicParsing="false" selected="true" text="Class diagram" toggleGroup="$type" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                        </RadioButton>
+                        <Label text="Diagram form:" GridPane.rowIndex="3" />
+                        <RadioButton fx:id="formGraphical" mnemonicParsing="false" selected="true" text="Graphical" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                           <toggleGroup>
+                              <ToggleGroup fx:id="form" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="formTextual" mnemonicParsing="false" text="Textual (ALF)" toggleGroup="$form" GridPane.columnIndex="1" GridPane.rowIndex="4">
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                        </RadioButton>
+                     </children>
+                     <VBox.margin>
+                        <Insets />
+                     </VBox.margin>
+                  </GridPane>
+                  <HBox alignment="BOTTOM_RIGHT">
+                     <children>
+                        <Button cancelButton="true" mnemonicParsing="false" onAction="#cancel" text="Cancel" />
+                        <Button defaultButton="true" mnemonicParsing="false" onAction="#finish" text="Finish">
+                           <HBox.margin>
+                              <Insets left="10.0" />
+                           </HBox.margin>
+                        </Button>
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+         </content>
+      </TitledPane>
+   </children>
+</AnchorPane>
