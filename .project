@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>ModelDrivenStudio</name>
-	<comment>Project ModelDrivenStudio created by Buildship.</comment>
+	<name>fUml-Studio</name>
+	<comment>Deployment environment for creating applications in fUml and ALF.</comment>
 	<projects>
 	</projects>
 	<buildSpec>
