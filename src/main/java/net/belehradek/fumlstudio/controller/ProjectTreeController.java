@@ -4,12 +4,12 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
-import net.belehradek.fumlstudio.AwesomeIcon;
-import net.belehradek.fumlstudio.event.Event;
+import net.belehradek.Global;
 import net.belehradek.fumlstudio.event.EventProjectElementSelected;
 import net.belehradek.fumlstudio.event.EventRouter;
 import net.belehradek.fumlstudio.project.IProject;
 import net.belehradek.fumlstudio.project.IProjectElement;
+import net.belehradek.fumlstudio.project.IProjectElementGroup;
 import net.belehradek.fumlstudio.project.fUmlProject;
 
 public class ProjectTreeController extends TreeView<IProjectElement> {
@@ -22,6 +22,7 @@ public class ProjectTreeController extends TreeView<IProjectElement> {
 		getSelectionModel().selectedItemProperty().addListener(new ChangeListener<TreeItem>() {
 			@Override
 			public void changed(ObservableValue<? extends TreeItem> observable, TreeItem oldValue, TreeItem newValue) {
+				if (newValue == null) return;
 				TreeItem selectedItem = newValue;
 				Object value = selectedItem.getValue();
 				if (value instanceof IProjectElement) {
@@ -34,17 +35,34 @@ public class ProjectTreeController extends TreeView<IProjectElement> {
 	}
 
 	public void showProject(IProject project) {
-		TreeItem rootItem = new TreeItem(project, AwesomeIcon.PROJECT_FILE.node());
+		TreeItem rootItem = createTreeItem(project);
 		rootItem.setExpanded(true);
-
-		// TODO: kategorie
-
-		for (IProjectElement elem : project.getElements()) {
-			TreeItem<IProjectElement> item = new TreeItem<>(elem);
-			item.setGraphic(elem.getIcon());
-			rootItem.getChildren().add(item);
-		}
-
 		setRoot(rootItem);
+	}
+	
+	protected TreeItem createTreeItem(IProjectElement elem) {
+//		if (elem instanceof IProject) {
+//			return new TreeItem<>(elem);
+//		} else 
+		if (elem instanceof IProjectElementGroup) {
+//			Global.log("Tree group: " + elem.getName());
+			TreeItem out = new TreeItem<>(elem);
+			out.setGraphic(elem.getIcon());
+			out.setExpanded(true);
+			for (IProjectElement ch : ((IProjectElementGroup)elem).getElements()) {
+				TreeItem n = createTreeItem(ch);
+				n.setGraphic(ch.getIcon());
+				out.getChildren().add(n);
+			}
+			return out;
+		} else if (elem instanceof IProjectElement) {
+//			Global.log("Tree elem: " + elem);
+			TreeItem out = new TreeItem<>(elem);
+			out.setGraphic(elem.getIcon());
+			return out;
+		} else {
+			Global.log("Tree unknown: " + elem);
+			return null;
+		}
 	}
 }

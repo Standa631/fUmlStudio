@@ -13,4 +13,6 @@ public interface IProjectElement {
 	public String getType();
 	
 	public String getName();
+	
+//	public void save();
 }

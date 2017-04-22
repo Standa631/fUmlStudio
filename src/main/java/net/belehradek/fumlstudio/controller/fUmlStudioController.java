@@ -5,30 +5,37 @@ package net.belehradek.fumlstudio.controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import javafx.application.Platform;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Side;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Scale;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import net.belehradek.fumlstudio.GraphEditorPersistence;
-import net.belehradek.fumlstudio.Lib;
+import net.belehradek.Global;
+import net.belehradek.Lib;
+import net.belehradek.TextAreaLogger;
+import net.belehradek.fuml.codegeneration.CreateFileDirective;
+import net.belehradek.fuml.codegeneration.ExtendedMethodWrapper;
+import net.belehradek.fuml.codegeneration.MethodWrapper;
+import net.belehradek.fuml.codegeneration.TemplateEngineHelper;
+import net.belehradek.fuml.core.XmiModelLoader;
 import net.belehradek.fumlstudio.fUmlStudio;
+import net.belehradek.fumlstudio.dialog.NewDiagramDialog;
+import net.belehradek.fumlstudio.dialog.NewProjectDialog;
+import net.belehradek.fumlstudio.dialog.NewTransformationDialog;
 import net.belehradek.fumlstudio.event.EventHandler;
 import net.belehradek.fumlstudio.event.EventProjectElementSelected;
 import net.belehradek.fumlstudio.event.EventRouter;
@@ -37,12 +44,11 @@ import net.belehradek.fumlstudio.project.ProjectElementAlf;
 import net.belehradek.fumlstudio.project.ProjectElementFtl;
 import net.belehradek.fumlstudio.project.ProjectElementFuml;
 import net.belehradek.fumlstudio.project.fUmlProject;
-//import net.belehradek.umlgraphiceditor.ISkinController;
-//import net.belehradek.umlgraphiceditor.SkinController;
-import net.belehradek.umlgraphiceditor.Constants;
+import net.belehradek.umleditor.Constants;
 
 import org.eclipse.emf.edit.domain.AdapterFactoryEditingDomain;
 import org.eclipse.emf.edit.domain.EditingDomain;
+import org.modeldriven.alf.eclipse.papyrus.execution.Fuml.ElementResolutionError;
 
 import de.tesis.dynaware.grapheditor.Commands;
 import de.tesis.dynaware.grapheditor.GraphEditor;
@@ -52,6 +58,9 @@ import de.tesis.dynaware.grapheditor.core.skins.defaults.connection.SimpleConnec
 import de.tesis.dynaware.grapheditor.model.GModel;
 import de.tesis.dynaware.grapheditor.model.GraphFactory;
 import de.tesis.dynaware.grapheditor.window.WindowPosition;
+import freemarker.template.TemplateException;
+
+import org.modeldriven.alf.uml.Package;
 
 /**
  * Controller for the {@link fUmlStudio} application.
@@ -80,33 +89,19 @@ public class fUmlStudioController {
 	@FXML
 	private AnchorPane diagramTestPane;
 	
-	
-
-	@FXML
-	private AnchorPane projectTreeConteiner;
-
-	private GraphEditorContainer graphEditorContainer;
-	private final GraphEditor graphEditor = new DefaultGraphEditor();
-	private final GraphEditorPersistence graphEditorPersistence = new GraphEditorPersistence();
-
-	private Scale scaleTransform;
-	private double currentZoomFactor = 1;
-
-//	private ISkinController titledSkinController;
-
-//	private final ObjectProperty<ISkinController> activeSkinController = new SimpleObjectProperty<>();
+	//conteiners
+	@FXML protected AnchorPane logTextAreaConteiner;
+	@FXML protected AnchorPane projectTreeConteiner;
+	@FXML protected AnchorPane tabsManagerConteiner;
 
 	protected IProject activeProject;
 	protected ProjectTreeController projectTree;
-	
-	@FXML
-	protected AnchorPane tabsManagerConteiner;
-	public TabsManager tabsManager;
+	protected TabsManager tabsManager;
+	protected TextAreaLogger logTextArea;
 	
 
 	public fUmlStudioController() {
 		projectTree = new ProjectTreeController();
-		
 		EventRouter.registerHandler(projectTree, new EventHandler<EventProjectElementSelected>() {
 			@Override
 			public void handle(EventProjectElementSelected event) {
@@ -120,75 +115,60 @@ public class fUmlStudioController {
 			@Override
 			public void handle(EventProjectElementSelected event) {
 				System.out.println("Event projectElementTabSelected: " + event.getElement());
-				tabsManager.addElementTab(event.getElement());
 			}
 		});
+		
+		logTextArea = new TextAreaLogger();
+		Global.setLoggerStream(logTextArea.getPrintStream());
 	}
 
-	public void showWindow() throws IOException {
+	public void showWindow(Stage stage) throws IOException {
+		this.stage = stage;
+		
 		final FXMLLoader loader = new FXMLLoader(getClass().getResource("fUmlStudioLayout.fxml"));
 		loader.setController(this);
 		final Parent root = loader.load();
 		final Scene scene = new Scene(root);
-		stage = new Stage();
 
 		scene.getStylesheets().add(getClass().getResource(DEMO_STYLESHEET).toExternalForm());
-		// scene.getStylesheets().add(getClass().getResource(TREE_SKIN_STYLESHEET).toExternalForm());
 		scene.getStylesheets().add(getClass().getResource(TITLED_SKIN_STYLESHEET).toExternalForm());
 		Font.loadFont(getClass().getResource(FONT_AWESOME).toExternalForm(), 12);
 
 		stage.setScene(scene);
 		stage.setTitle(APPLICATION_TITLE);
-
 		stage.show();
-
-		panToCenter();
 	}
 
-	/**
-	 * Called by JavaFX when FXML is loaded.
-	 */
 	public void initialize() {
-
-		final GModel model = GraphFactory.eINSTANCE.createGModel();
-		graphEditor.setModel(model);
-
-		graphEditorContainer = new GraphEditorContainer();
-		Lib.setZeroAnchor(graphEditorContainer);
-		tabsManagerConteiner.getChildren().add(graphEditorContainer);
-		graphEditorContainer.setGraphEditor(graphEditor);
-		setDetouredStyle();
-
-//		titledSkinController = new SkinController(graphEditor, graphEditorContainer);
-
-//		activeSkinController.set(titledSkinController);
-
-		addActiveSkinControllerListener();
-
 		Lib.setZeroAnchor(projectTree);
 		projectTreeConteiner.getChildren().add(projectTree);
 		
 		Lib.setZeroAnchor(tabsManager);
 		tabsManagerConteiner.getChildren().add(tabsManager);
+		
+		Lib.setZeroAnchor(logTextArea);
+		logTextAreaConteiner.getChildren().add(logTextArea);
 	}
 
 	@FXML
 	public void actionNewProject() {
-		/*
-		 * NewProjectDialog newProjectDialog = new NewProjectDialog() {
-		 * 
-		 * @Override protected void finishCallback(File projectRoot) {
-		 * activeProject = new fUmlProject();
-		 * activeProject.createNewProject(projectRoot); } }; try {
-		 * newProjectDialog.showWindow(); } catch (IOException e) {
-		 * e.printStackTrace(); }
-		 */
+		NewProjectDialog newProjectDialog = new NewProjectDialog() {
+			@Override protected void finishCallback(File projectRoot) {
+				activeProject = new fUmlProject();
+				activeProject.createNewProject(projectRoot); 
+				projectTree.showProject(activeProject);
+			} 
+		};
+		try {
+			newProjectDialog.showWindow(); 
+		} catch (IOException e) {
+			e.printStackTrace(); 
+		}
 
 		// TEST:
-		activeProject = new fUmlProject();
-		activeProject.createNewProject(new File("C:\\Users\\Bel2\\DIP\\fUmlTest"));
-
-		projectTree.showProject(activeProject);
+		//activeProject = new fUmlProject();
+		//activeProject.createNewProject(new File("C:\\Users\\Bel2\\DIP\\fUmlTest"));
+		//projectTree.showProject(activeProject);
 	}
 
 	@FXML
@@ -203,11 +183,38 @@ public class fUmlStudioController {
 					activeProject.addProjectElement(new ProjectElementAlf(activeProject, name));
 				}
 				projectTree.showProject(activeProject);
-				tabsManager.clear();
+				//tabsManager.clear();
 			}
 		};
 		try {
 			newDiagramDialog.showWindow();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@FXML
+	public void newClassDiagram() {
+		ProjectElementEditor editor = tabsManager.getActiveEditor();
+		if (editor instanceof GraphicEditor) {
+			GraphicEditor graphic = (GraphicEditor) editor;
+			graphic.addNode(Constants.CLASS_NODE, "id", 1.0);
+		}
+	}
+	
+	@FXML
+	public void newTransformationFile() {
+		NewTransformationDialog newTransformationDialog = new NewTransformationDialog() {
+			@Override
+			protected void finishCallback(String transformationId) {
+				System.out.println("Create new transformation: '" + transformationId);
+				activeProject.addProjectElement(new ProjectElementFtl(activeProject, transformationId));
+				projectTree.showProject(activeProject);
+				//tabsManager.clear();
+			}
+		};
+		try {
+			newTransformationDialog.showWindow();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -235,17 +242,23 @@ public class fUmlStudioController {
 		projectTree.showProject(activeProject);
 		tabsManager.clear();
 	}
-
-	@FXML
-	public void load() {
-		graphEditorPersistence.loadFromFile(graphEditor);
-	}
-
+	
 	@FXML
 	public void loadSample() {
-		// defaultSkinButton.setSelected(true);
-		// setTitledSkin();
-		graphEditorPersistence.loadSample(graphEditor);
+		
+	}
+	
+	@FXML
+	public void runCodeGeneration() throws IOException, TemplateException, ElementResolutionError {
+		XmiModelLoader m = new XmiModelLoader(new File("C:\\Users\\Bel2\\DIP\\fUmlGradlePlugin\\Libraries"), new File("C:\\Users\\Bel2\\DIP\\fUmlTest\\build\\fuml"));
+		Package p = m.loadModel("App");
+		
+		Map<String, Object> model = new HashMap<>();
+		model.put("model", new ExtendedMethodWrapper(p, p));
+		model.put("createFile", new CreateFileDirective(new File("c:\\Users\\Bel2\\DIP\\fUmlTest\\out\\src\\main\\java\\")));
+		model.put("test", "cau");
+		
+		TemplateEngineHelper.transform(new File("c:\\Users\\Bel2\\DIP\\fUmlTest\\src\\main\\ftl\\javaClass.ftl"), model);
 	}
 
 	@FXML
@@ -253,54 +266,40 @@ public class fUmlStudioController {
 		Platform.exit();
 		System.exit(0);
 	}
-
+	
 	@FXML
-	public void loadSampleLarge() {
-		// defaultSkinButton.setSelected(true);
-		setDefaultSkin();
-		graphEditorPersistence.loadSampleLarge(graphEditor);
+	public void buildProject() {
+		activeProject.build();
 	}
-
+	
 	@FXML
-	public void loadTitled() {
-		// titledSkinButton.setSelected(true);
-		setTitledSkin();
-		graphEditorPersistence.loadTitled(graphEditor);
-	}
-
-	@FXML
-	public void save() {
-		graphEditorPersistence.saveToFile(graphEditor);
+	public void debugProject() {
+		activeProject.debug();
 	}
 
 	@FXML
 	public void clearAll() {
-		Commands.clear(graphEditor.getModel());
-	}
-
-	@FXML
-	public void exit() {
-		Platform.exit();
+		//Commands.clear(graphEditor.getModel());
 	}
 
 	@FXML
 	public void undo() {
-		Commands.undo(graphEditor.getModel());
+		//Commands.undo(graphEditor.getModel());
 	}
 
 	@FXML
 	public void redo() {
-		Commands.redo(graphEditor.getModel());
+		//Commands.redo(graphEditor.getModel());
 	}
 
 	@FXML
 	public void cut() {
-		graphEditor.getSelectionManager().cut();
+		//graphEditor.getSelectionManager().cut();
 	}
 
 	@FXML
 	public void copy() {
-		graphEditor.getSelectionManager().copy();
+		//graphEditor.getSelectionManager().copy();
 	}
 
 	@FXML
@@ -315,34 +314,7 @@ public class fUmlStudioController {
 
 	@FXML
 	public void deleteSelection() {
-		graphEditor.getSelectionManager().deleteSelection();
-	}
-	
-	@FXML
-	public void newClassDiagram() {
-		FileEditor editor = tabsManager.getActiveEditor();
-		if (editor instanceof GraphicEditor) {
-			GraphicEditor graphic = (GraphicEditor) editor;
-			graphic.addNode(Constants.TITLED_NODE, 1.0);
-		}
-	}
-	
-	@FXML
-	public void newTransformationFile() {
-		NewTransformationDialog newTransformationDialog = new NewTransformationDialog() {
-			@Override
-			protected void finishCallback(String transformationId) {
-				System.out.println("Create new transformation: '" + transformationId);
-				activeProject.addProjectElement(new ProjectElementFtl(activeProject, transformationId));
-				projectTree.showProject(activeProject);
-				tabsManager.clear();
-			}
-		};
-		try {
-			newTransformationDialog.showWindow();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		//graphEditor.getSelectionManager().deleteSelection();
 	}
 
 	@FXML
@@ -375,190 +347,19 @@ public class fUmlStudioController {
 	@FXML
 	public void setGappedStyle() {
 
-		graphEditor.getProperties().getCustomProperties().remove(SimpleConnectionSkin.SHOW_DETOURS_KEY);
-		graphEditor.reload();
+		//graphEditor.getProperties().getCustomProperties().remove(SimpleConnectionSkin.SHOW_DETOURS_KEY);
+		//graphEditor.reload();
 	}
 
 	@FXML
 	public void setDetouredStyle() {
-
-		final Map<String, String> customProperties = graphEditor.getProperties().getCustomProperties();
-		customProperties.put(SimpleConnectionSkin.SHOW_DETOURS_KEY, Boolean.toString(true));
-		graphEditor.reload();
+		//final Map<String, String> customProperties = graphEditor.getProperties().getCustomProperties();
+		//customProperties.put(SimpleConnectionSkin.SHOW_DETOURS_KEY, Boolean.toString(true));
+		//graphEditor.reload();
 	}
 
 	@FXML
 	public void toggleMinimap() {
-		graphEditorContainer.getMinimap().visibleProperty().bind(minimapButton.selectedProperty());
-	}
-
-	/**
-	 * Pans the graph editor container to place the window over the center of
-	 * the content.
-	 *
-	 * <p>
-	 * Only works after the scene has been drawn, when getWidth() & getHeight()
-	 * return non-zero values.
-	 * </p>
-	 */
-	public void panToCenter() {
-		graphEditorContainer.panTo(WindowPosition.CENTER);
-	}
-
-	/**
-	 * Initializes the menu bar.
-	 */
-	// private void initializeMenuBar() {
-	//
-	// scaleTransform = new Scale(currentZoomFactor, currentZoomFactor, 0, 0);
-	// scaleTransform.yProperty().bind(scaleTransform.xProperty());
-	//
-	// graphEditor.getView().getTransforms().add(scaleTransform);
-	//
-	// final ToggleGroup skinGroup = new ToggleGroup();
-	// skinGroup.getToggles().addAll(defaultSkinButton, titledSkinButton);
-	//
-	// final ToggleGroup connectionStyleGroup = new ToggleGroup();
-	// connectionStyleGroup.getToggles().addAll(gappedStyleButton,
-	// detouredStyleButton);
-	//
-	// final ToggleGroup connectorTypeGroup = new ToggleGroup();
-	// connectorTypeGroup.getToggles().addAll(inputConnectorTypeButton,
-	// outputConnectorTypeButton);
-	//
-	// final ToggleGroup positionGroup = new ToggleGroup();
-	// positionGroup.getToggles().addAll(leftConnectorPositionButton,
-	// rightConnectorPositionButton);
-	// positionGroup.getToggles().addAll(topConnectorPositionButton,
-	// bottomConnectorPositionButton);
-	//
-	// graphEditor.getProperties().gridVisibleProperty().bind(showGridButton.selectedProperty());
-	// graphEditor.getProperties().snapToGridProperty().bind(snapToGridButton.selectedProperty());
-	//
-	// minimapButton.setGraphic(AwesomeIcon.MAP.node());
-	//
-	// initializeZoomOptions();
-	//
-	// final ListChangeListener<? super GNode> selectedNodesListener = change ->
-	// {
-	// //checkConnectorButtonsToDisable();
-	// };
-	//
-	// graphEditor.getSelectionManager().getSelectedNodes().addListener(selectedNodesListener);
-	// }
-
-	/**
-	 * Initializes the list of zoom options.
-	 */
-	private void initializeZoomOptions() {
-
-		final ToggleGroup toggleGroup = new ToggleGroup();
-
-		for (int i = 1; i <= 5; i++) {
-
-			final RadioMenuItem zoomOption = new RadioMenuItem();
-			final double zoomFactor = i;
-
-			zoomOption.setText(i + "00%");
-			zoomOption.setOnAction(event -> setZoomFactor(zoomFactor));
-
-			toggleGroup.getToggles().add(zoomOption);
-			// zoomOptions.getItems().add(zoomOption);
-
-			if (i == 1) {
-				zoomOption.setSelected(true);
-			}
-		}
-	}
-
-	/**
-	 * Sets a new zoom factor.
-	 *
-	 * <p>
-	 * Note that everything will look crap if the zoom factor is non-integer.
-	 * </p>
-	 *
-	 * @param zoomFactor
-	 *            the new zoom factor
-	 */
-	private void setZoomFactor(final double zoomFactor) {
-
-		final double zoomFactorRatio = zoomFactor / currentZoomFactor;
-
-		final double currentCenterX = graphEditorContainer.windowXProperty().get();
-		final double currentCenterY = graphEditorContainer.windowYProperty().get();
-
-		if (zoomFactor != 1) {
-			// Cache-while-panning is sometimes very sluggish when zoomed in.
-			graphEditorContainer.setCacheWhilePanning(false);
-		} else {
-			graphEditorContainer.setCacheWhilePanning(true);
-		}
-
-		scaleTransform.setX(zoomFactor);
-		graphEditorContainer.panTo(currentCenterX * zoomFactorRatio, currentCenterY * zoomFactorRatio);
-		currentZoomFactor = zoomFactor;
-	}
-
-	/**
-	 * Adds a listener to make changes to available menu options when the skin
-	 * type changes.
-	 */
-	private void addActiveSkinControllerListener() {
-
-//		activeSkinController.addListener((observable, oldValue, newValue) -> {
-//			handleActiveSkinControllerChange();
-//		});
-	}
-
-	/**
-	 * Enables & disables certain menu options and sets CSS classes based on the
-	 * new skin type that was set active.
-	 */
-	private void handleActiveSkinControllerChange() {
-
-		// if (treeSkinController.equals(activeSkinController.get())) {
-		//
-		// graphEditor.setConnectorValidator(new TreeConnectorValidator());
-		// graphEditor.getSelectionManager().setConnectionSelectionPredicate(new
-		// TreeConnectionSelectionPredicate());
-		// graphEditor.getView().getStyleClass().remove(STYLE_CLASS_TITLED_SKINS);
-		// treeSkinButton.setSelected(true);
-		//
-		// } else
-		// if (titledSkinController.equals(activeSkinController.get())) {
-		{
-			graphEditor.setConnectorValidator(null);
-			graphEditor.getSelectionManager().setConnectionSelectionPredicate(null);
-			if (!graphEditor.getView().getStyleClass().contains(STYLE_CLASS_TITLED_SKINS)) {
-				graphEditor.getView().getStyleClass().add(STYLE_CLASS_TITLED_SKINS);
-			}
-			// titledSkinButton.setSelected(true);
-
-		}
-		// else {
-		//
-		// graphEditor.setConnectorValidator(null);
-		// graphEditor.getSelectionManager().setConnectionSelectionPredicate(null);
-		// graphEditor.getView().getStyleClass().remove(STYLE_CLASS_TITLED_SKINS);
-		// defaultSkinButton.setSelected(true);
-		// }
-
-		// Demo does not currently support mixing of skin types. Skins don't
-		// know how to cope with it.
-		clearAll();
-		flushCommandStack();
-		graphEditor.getSelectionManager().clearMemory();
-	}
-
-	/**
-	 * Flushes the command stack, so that the undo/redo history is cleared.
-	 */
-	private void flushCommandStack() {
-
-		final EditingDomain editingDomain = AdapterFactoryEditingDomain.getEditingDomainFor(graphEditor.getModel());
-		if (editingDomain != null) {
-			editingDomain.getCommandStack().flush();
-		}
+		//graphEditorContainer.getMinimap().visibleProperty().bind(minimapButton.selectedProperty());
 	}
 }

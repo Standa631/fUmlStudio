@@ -81,7 +81,7 @@
                                 </items>
                               </Menu>
                               <MenuItem mnemonicParsing="false" onAction="#openProject" text="Open project" />
-                              <MenuItem mnemonicParsing="false" onAction="#loadTitled" text="Load sample" />
+                              <MenuItem mnemonicParsing="false" onAction="#loadSample" text="Load sample" />
                               <SeparatorMenuItem mnemonicParsing="false" />
                               <MenuItem mnemonicParsing="false" text="Import" />
                               <MenuItem mnemonicParsing="false" text="Export" />
@@ -105,8 +105,18 @@
                   </MenuBar>
                   <ToolBar>
                     <items>
+                        <Button mnemonicParsing="false" text="Refresh" />
                       <Button mnemonicParsing="false" onAction="#saveFile" text="Save" />
                         <Button mnemonicParsing="false" onAction="#newClassDiagram" text="New Class" />
+                        <Slider min="1.0" value="50.0" />
+                        <Button mnemonicParsing="false" text="Clean" />
+                        <Button mnemonicParsing="false" text="Build fUML" />
+                        <Button mnemonicParsing="false" onAction="#buildProject" text="Build ALF" />
+                        <Button mnemonicParsing="false" text="Build All" />
+                        <Separator orientation="VERTICAL" />
+                        <Button mnemonicParsing="false" onAction="#debugProject" text="Debug fUML" />
+                        <Separator orientation="VERTICAL" />
+                        <Button mnemonicParsing="false" onAction="#runCodeGeneration" text="CodeGeneration" />
                     </items>
                   </ToolBar>
                </children>
@@ -118,6 +128,19 @@
          <bottom>
             <VBox maxWidth="1.7976931348623157E308" BorderPane.alignment="CENTER">
                <children>
+                  <TitledPane text="Log">
+                     <content>
+                     		<AnchorPane fx:id="logTextAreaConteiner" maxHeight="1.7976931348623157E308" minHeight="0.0" minWidth="0.0" prefHeight="150.0">
+                           <children>
+                        <!-- <TreeView AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" /> -->
+                     </children>
+                           <padding>
+                              <Insets bottom="0" left="0" right="0" top="0" />
+                           </padding>
+                          </AnchorPane>
+                     </content>
+                  </TitledPane>
+                  <!-- <TextArea fx:id="logTextArea" editable="false" prefHeight="150.0" promptText="Log" /> -->
                   <HBox minHeight="20.0">
                      <children>
                         <Label text="Statusbar" />

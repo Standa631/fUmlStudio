@@ -16,7 +16,7 @@ public class fUmlStudio extends Application {
     @Override
     public void start(final Stage stage) throws Exception {
     	fUmlStudioController cont = new fUmlStudioController();
-    	cont.showWindow();
+    	cont.showWindow(stage);
     }
 
     public static void main(final String[] args) {

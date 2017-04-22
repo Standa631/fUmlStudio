@@ -7,27 +7,49 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import javafx.event.EventHandler;
+import javafx.event.EventType;
 import javafx.scene.Node;
 import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.text.Font;
+import net.belehradek.fuml.core.AlfModelLoader;
 
-public class TextEditor extends FileEditor {
+public class TextEditor extends ProjectElementEditor {
 
 	protected TextArea view = new TextArea();
 
 	public TextEditor() {
 		super();
+		
+		view.setFont(Font.font("Monospace"));
+		
+		//nahrazeni tabulatoru 4 mezerami
+		view.addEventFilter(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
+		    @Override
+		    public void handle(KeyEvent e) {
+		        if (e.getCode() == KeyCode.TAB) {
+		            String s = "    ";
+		            view.insertText(view.getCaretPosition(), s);
+		            e.consume();
+		        }
+		    }
+		});
 	}
 
 	@Override
 	protected void load() {
 		try {
-			// StringBuilder stringBuffer = new StringBuilder();
+			//TEST
+			//AlfModelLoader loader = new AlfModelLoader();
+			//org.modeldriven.alf.uml.Package p = loader.loadModel(projectElement.getFile().getParentFile().getAbsolutePath(), projectElement.getFile().getName());
+			
 			BufferedReader bufferedReader = null;
-			bufferedReader = new BufferedReader(new FileReader(file));
+			bufferedReader = new BufferedReader(new FileReader(projectElement.getFile()));
 			String text;
 
 			while ((text = bufferedReader.readLine()) != null) {
-				// stringBuffer.append(text);
 				view.appendText(text + '\n');
 			}
 			bufferedReader.close();
@@ -38,8 +60,9 @@ public class TextEditor extends FileEditor {
 
 	@Override
 	public void save() {
-		try (PrintWriter out = new PrintWriter(file)){
-		    out.println(view.getText());
+		try (PrintWriter out = new PrintWriter(projectElement.getFile())){
+			String text = view.getText();
+		    out.print(text);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javafx.scene.Node;
-import net.belehradek.fumlstudio.AwesomeIcon;
+import net.belehradek.AwesomeIcon;
 
 public class ProjectElementAlf implements IProjectElement {
 
@@ -15,7 +15,7 @@ public class ProjectElementAlf implements IProjectElement {
 	public ProjectElementAlf(IProject project, String name) {
 		this.project = project;
 		this.name = name;
-		this.file = new File(project.getRootFolder(), "src/main/alf/" + name + ".alf");
+		this.file = new File(project.getFile(), "src/main/alf/" + name + ".alf");
 		createFile();
 	}
 

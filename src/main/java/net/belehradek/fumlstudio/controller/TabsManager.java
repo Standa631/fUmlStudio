@@ -21,7 +21,6 @@ import net.belehradek.fumlstudio.project.ProjectElementFuml;
 public class TabsManager extends TabPane {
 
 	protected Map<IProjectElement, Tab> tabs = new HashMap<>();
-	protected Map<String, FileEditor> editors = new HashMap<>();
 
 	public TabsManager() {
 		super();
@@ -48,54 +47,49 @@ public class TabsManager extends TabPane {
 			getSelectionModel().select(tab);
 		} else {
 			Tab tab = new Tab(element.getName());
-			tab.setUserData(element);
+			ProjectElementEditor editor = null;
 			tab.setOnClosed(new EventHandler<Event>() {
 				@Override
-				public void handle(Event event) {
+				public void handle(Event event) {					
 					Tab tab = (Tab) event.getSource();
-					IProjectElement element = (IProjectElement) tab.getUserData();
-					tabs.remove(element);
-					editors.remove(tab);
+					System.out.println("Zavreni tabu: " + tab.getText());
+					tabs.values().remove(tab);
 				}
 			});
 			if (element instanceof ProjectElementAlf) {
-				TextEditor textEditor = new TextEditor();
-				textEditor.setFile(element.getFile());
-				tab.setContent(textEditor.getView());
-				editors.put(tab.getId(), textEditor);
+				editor = new TextEditor();
+				editor.setProjectElement(element);
+				tab.setContent(editor.getView());
 			} else if (element instanceof ProjectElementFuml) {
-				GraphicEditor graphicEditor = new GraphicEditor();
-				graphicEditor.setFile(element.getFile());
-				tab.setContent(graphicEditor.getView());
-				editors.put(tab.getId(), graphicEditor);
+				editor = new GraphicEditor();
+				editor.setProjectElement(element);
+				tab.setContent(editor.getView());
 			} else if (element instanceof ProjectElementFtl) {
-				TextEditor textEditor = new TextEditor();
-				textEditor.setFile(element.getFile());
-				tab.setContent(textEditor.getView());
-				editors.put(tab.getId(), textEditor);
+				editor = new TextEditor();
+				editor.setProjectElement(element);
+				tab.setContent(editor.getView());
 			} else {
 				System.out.println("Neznamy typ souboru pri vytvareni tabu s editorem: " + element.getFile().getAbsolutePath());
 			}
+			editor.load();
 			tabs.put(element, tab);
+			tab.setUserData(editor);
 			getTabs().add(tab);
 			getSelectionModel().select(tab);
 		}
 	}
 	
 	public void saveActive() {
-		Tab tab = getSelectionModel().getSelectedItem();
-		FileEditor editor = editors.get(tab.getId());
-		editor.save();
+		getActiveEditor().save();
 	}
 	
-	public FileEditor getActiveEditor() {
+	public ProjectElementEditor getActiveEditor() {
 		Tab tab = getSelectionModel().getSelectedItem();
-		FileEditor editor = editors.get(tab.getId());
+		ProjectElementEditor editor = (ProjectElementEditor) tab.getUserData();
 		return editor;
 	}
 	
 	public void clear() {
-		editors.clear();
 		tabs.clear();
 		if (getTabs() != null)
 			getTabs().clear();
