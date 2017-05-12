@@ -30,20 +30,35 @@ public class CreateFileDirective implements TemplateDirectiveModel {
             TemplateDirectiveBody body)
             throws TemplateException, IOException {
 
-    	String fileName = params.get(PARAM_NAME_FILENAME).toString();
-    	//String filePath = (String) params.get(PARAM_NAME_FILEPATH);
+    	String fileName = null;
+    	if (params.get(PARAM_NAME_FILENAME) != null)
+    		fileName = params.get(PARAM_NAME_FILENAME).toString();
     	
-    	Global.log("CreateFileDirective: " + fileName);
+    	String filePath = null;
+    	if (params.get(PARAM_NAME_FILEPATH) != null)
+    		filePath = params.get(PARAM_NAME_FILEPATH).toString();
 
-        if (body != null) {
-            //body.render(env.getOut());
+        if (body != null && fileName != null) {
+        	File file = null;
+        	if (filePath != null)
+        		file = new File(rootDir, preparePathString(filePath) + fileName);
+        	else
+        		file = new File(rootDir, fileName);
         	
-        	File file = new File(rootDir, fileName);
+        	Global.log("CreateFileDirective: " + file.getAbsolutePath());
+        	file.getParentFile().mkdirs();
         	file.createNewFile();
         	FileWriter fw = new FileWriter(file);
         	BufferedWriter bw = new BufferedWriter(fw);
         	body.render(bw);
         	bw.close();
         }
+    }
+    
+    protected String preparePathString(String path) {
+    	String out = path.replace(".", "\\");
+    	out = out.replace("::", "\\");
+    	out += "\\";
+    	return out;
     }
 }

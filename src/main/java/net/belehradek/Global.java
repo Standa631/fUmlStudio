@@ -5,6 +5,10 @@ import java.io.PrintStream;
 import org.modeldriven.alf.uml.Element;
 import org.modeldriven.alf.uml.NamedElement;
 import org.modeldriven.alf.uml.Package;
+import org.modeldriven.alf.uml.Class_;
+
+import net.belehradek.fuml.core.UmlFrameworkWrapper;
+import net.belehradek.fuml.core.UmlWrapper;
 
 public class Global {
 	
@@ -19,9 +23,31 @@ public class Global {
 	}
 	
 	public static void log(Package pack) {
+		if (pack == null) return;
+		
 		log(pack.getClass().getName() + ": " + pack.getName());
 		for (NamedElement e : pack.getMember()) {
-			log(e.getClass().getName() + ": " + e.getName());
+			log(e);
+		}
+	}
+	
+	public static void log(NamedElement e) {
+		log(e.getClass().getName() + ": " + e.getName());
+	}
+	
+	public static void logRecursive(Package pack, boolean library) {
+//		if (!library && UmlWrapper.isLibrary(pack)) return;
+//		log(pack.getClass().getName() + ": " + pack.getQualifiedName());
+//		for (NamedElement e : pack.getOwnedMember()) {
+//			if (!UmlWrapper.isLibrary(e))
+//				log(e.getClass().getName() + ": " + e.getQualifiedName());
+//			if (e instanceof Package) {
+//				logRecursive((Package)e, library);
+//			}
+//		}
+		
+		for (Class_ c : UmlFrameworkWrapper.getAllClasses(pack, library)) {
+			log(c);
 		}
 	}
 	

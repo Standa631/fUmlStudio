@@ -39,19 +39,21 @@ public class TextEditor extends ProjectElementEditor {
 	}
 
 	@Override
-	protected void load() {
+	public void load() {
 		try {
 			//TEST
 			//AlfModelLoader loader = new AlfModelLoader();
 			//org.modeldriven.alf.uml.Package p = loader.loadModel(projectElement.getFile().getParentFile().getAbsolutePath(), projectElement.getFile().getName());
 			
 			BufferedReader bufferedReader = null;
-			bufferedReader = new BufferedReader(new FileReader(projectElement.getFile()));
+			FileReader fileReader = new FileReader(projectElement.getFile());
+			bufferedReader = new BufferedReader(fileReader);
 			String text;
 
 			while ((text = bufferedReader.readLine()) != null) {
 				view.appendText(text + '\n');
 			}
+			fileReader.close();
 			bufferedReader.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -63,6 +65,7 @@ public class TextEditor extends ProjectElementEditor {
 		try (PrintWriter out = new PrintWriter(projectElement.getFile())){
 			String text = view.getText();
 		    out.print(text);
+		    out.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -1,37 +1,30 @@
-/*
- * Copyright (C) 2005 - 2014 by TESIS DYNAware GmbH
- */
 package net.belehradek.fumlstudio.controller;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
+import freemarker.template.TemplateException;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.LabelBuilder;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioMenuItem;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.text.Font;
-import javafx.scene.transform.Scale;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import net.belehradek.AwesomeIcon;
 import net.belehradek.Global;
 import net.belehradek.Lib;
 import net.belehradek.TextAreaLogger;
-import net.belehradek.fuml.codegeneration.CreateFileDirective;
-import net.belehradek.fuml.codegeneration.ExtendedMethodWrapper;
-import net.belehradek.fuml.codegeneration.MethodWrapper;
-import net.belehradek.fuml.codegeneration.TemplateEngineHelper;
-import net.belehradek.fuml.core.XmiModelLoader;
 import net.belehradek.fumlstudio.fUmlStudio;
 import net.belehradek.fumlstudio.dialog.NewDiagramDialog;
 import net.belehradek.fumlstudio.dialog.NewProjectDialog;
@@ -40,59 +33,43 @@ import net.belehradek.fumlstudio.event.EventHandler;
 import net.belehradek.fumlstudio.event.EventProjectElementSelected;
 import net.belehradek.fumlstudio.event.EventRouter;
 import net.belehradek.fumlstudio.project.IProject;
+import net.belehradek.fumlstudio.project.IProjectElement;
 import net.belehradek.fumlstudio.project.ProjectElementAlf;
 import net.belehradek.fumlstudio.project.ProjectElementFtl;
 import net.belehradek.fumlstudio.project.ProjectElementFuml;
 import net.belehradek.fumlstudio.project.fUmlProject;
 import net.belehradek.umleditor.Constants;
 
-import org.eclipse.emf.edit.domain.AdapterFactoryEditingDomain;
-import org.eclipse.emf.edit.domain.EditingDomain;
-import org.modeldriven.alf.eclipse.papyrus.execution.Fuml.ElementResolutionError;
-
-import de.tesis.dynaware.grapheditor.Commands;
-import de.tesis.dynaware.grapheditor.GraphEditor;
-import de.tesis.dynaware.grapheditor.GraphEditorContainer;
-import de.tesis.dynaware.grapheditor.core.DefaultGraphEditor;
-import de.tesis.dynaware.grapheditor.core.skins.defaults.connection.SimpleConnectionSkin;
-import de.tesis.dynaware.grapheditor.model.GModel;
-import de.tesis.dynaware.grapheditor.model.GraphFactory;
-import de.tesis.dynaware.grapheditor.window.WindowPosition;
-import freemarker.template.TemplateException;
-
-import org.modeldriven.alf.uml.Package;
-
 /**
  * Controller for the {@link fUmlStudio} application.
  */
 public class fUmlStudioController {
 
-	private static final String STYLE_CLASS_TITLED_SKINS = "titled-skins";
-	private static final String APPLICATION_TITLE = "Graph Editor Demo";
+	private static final String APPLICATION_TITLE = "Fuml studio";
+//	private static final String APPLICATION_FXML = "fUmlStudioLayout.fxml";
+	private static final String APPLICATION_FXML = "fUmlStudioLayoutResizable.fxml";
+	
 	private static final String DEMO_STYLESHEET = "demo.css";
-	private static final String TREE_SKIN_STYLESHEET = "treeskins.css";
 	private static final String TITLED_SKIN_STYLESHEET = "titledskins.css";
 	private static final String FONT_AWESOME = "fontawesome.ttf";
 	
 	protected Stage stage;
 
-	@FXML
-	private MenuBar menuBar;
-	@FXML
-	private Menu connectorTypeMenu;
-	@FXML
-	private MenuItem addConnectorButton;
-
-	@FXML
-	private ToggleButton minimapButton;
-
-	@FXML
-	private AnchorPane diagramTestPane;
+	@FXML private MenuBar menuBar;
+	@FXML private Menu connectorTypeMenu;
+	@FXML private MenuItem addConnectorButton;
+	@FXML private ToggleButton minimapButton;
+	@FXML private AnchorPane diagramTestPane;
+	
+	@FXML protected ComboBox<String> alfFileCombo;
+	@FXML protected ComboBox<String> codeGenerationFileCombo;
 	
 	//conteiners
 	@FXML protected AnchorPane logTextAreaConteiner;
 	@FXML protected AnchorPane projectTreeConteiner;
 	@FXML protected AnchorPane tabsManagerConteiner;
+	
+	@FXML protected Button imageButton;
 
 	protected IProject activeProject;
 	protected ProjectTreeController projectTree;
@@ -125,18 +102,22 @@ public class fUmlStudioController {
 	public void showWindow(Stage stage) throws IOException {
 		this.stage = stage;
 		
-		final FXMLLoader loader = new FXMLLoader(getClass().getResource("fUmlStudioLayout.fxml"));
+		final FXMLLoader loader = new FXMLLoader(getClass().getResource(APPLICATION_FXML));
 		loader.setController(this);
 		final Parent root = loader.load();
 		final Scene scene = new Scene(root);
 
 		scene.getStylesheets().add(getClass().getResource(DEMO_STYLESHEET).toExternalForm());
 		scene.getStylesheets().add(getClass().getResource(TITLED_SKIN_STYLESHEET).toExternalForm());
+		
 		Font.loadFont(getClass().getResource(FONT_AWESOME).toExternalForm(), 12);
 
 		stage.setScene(scene);
 		stage.setTitle(APPLICATION_TITLE);
 		stage.show();
+		
+		imageButton.setGraphic(AwesomeIcon.FLOPPY.node(20));
+		imageButton.setText("");
 	}
 
 	public void initialize() {
@@ -195,7 +176,7 @@ public class fUmlStudioController {
 	
 	@FXML
 	public void newClassDiagram() {
-		ProjectElementEditor editor = tabsManager.getActiveEditor();
+		IProjectElementEditor editor = tabsManager.getActiveEditor();
 		if (editor instanceof GraphicEditor) {
 			GraphicEditor graphic = (GraphicEditor) editor;
 			graphic.addNode(Constants.CLASS_NODE, "id", 1.0);
@@ -241,6 +222,16 @@ public class fUmlStudioController {
 		activeProject.loadProject(new File("C:\\Users\\Bel2\\DIP\\fUmlTest"));
 		projectTree.showProject(activeProject);
 		tabsManager.clear();
+		
+		for (IProjectElement e : activeProject.getAllElements()) {
+			if (e instanceof ProjectElementAlf && e.getType().equals("alf"))
+				alfFileCombo.getItems().add(e.getName());
+			else if (e instanceof ProjectElementFtl)
+				codeGenerationFileCombo.getItems().add(e.getName());
+		}
+		
+		alfFileCombo.getSelectionModel().select(0);
+		codeGenerationFileCombo.getSelectionModel().select(0);
 	}
 	
 	@FXML
@@ -249,16 +240,12 @@ public class fUmlStudioController {
 	}
 	
 	@FXML
-	public void runCodeGeneration() throws IOException, TemplateException, ElementResolutionError {
-		XmiModelLoader m = new XmiModelLoader(new File("C:\\Users\\Bel2\\DIP\\fUmlGradlePlugin\\Libraries"), new File("C:\\Users\\Bel2\\DIP\\fUmlTest\\build\\fuml"));
-		Package p = m.loadModel("App");
-		
-		Map<String, Object> model = new HashMap<>();
-		model.put("model", new ExtendedMethodWrapper(p, p));
-		model.put("createFile", new CreateFileDirective(new File("c:\\Users\\Bel2\\DIP\\fUmlTest\\out\\src\\main\\java\\")));
-		model.put("test", "cau");
-		
-		TemplateEngineHelper.transform(new File("c:\\Users\\Bel2\\DIP\\fUmlTest\\src\\main\\ftl\\javaClass.ftl"), model);
+	public void runCodeGeneration() throws IOException, TemplateException {
+		if (activeProject == null) {
+			Global.log("ERROR: project is not open!");
+		} else {
+			activeProject.generateCode();
+		}
 	}
 
 	@FXML
@@ -275,6 +262,11 @@ public class fUmlStudioController {
 	@FXML
 	public void debugProject() {
 		activeProject.debug();
+	}
+	
+	@FXML
+	public void cleanProject() {
+		activeProject.clean();
 	}
 
 	@FXML

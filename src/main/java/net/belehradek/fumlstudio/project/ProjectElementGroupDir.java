@@ -11,11 +11,11 @@ public class ProjectElementGroupDir implements IProjectElementGroup {
 
 	protected File file;
 	protected List<IProjectElement> elements = new ArrayList<>();
-	
-	public ProjectElementGroupDir (File file) {
+
+	public ProjectElementGroupDir(File file) {
 		this.file = file;
 	}
-	
+
 	@Override
 	public Node getIcon() {
 		return AwesomeIcon.PROJECT_FILE.node();
@@ -39,6 +39,22 @@ public class ProjectElementGroupDir implements IProjectElementGroup {
 	@Override
 	public List<IProjectElement> getElements() {
 		return elements;
+	}
+
+	@Override
+	public List<IProjectElement> getAllElements() {
+		List<IProjectElement> out = new ArrayList<>();
+		getAllElementsRecurse(out, this);
+		return out;
+	}
+
+	protected void getAllElementsRecurse(List<IProjectElement> out, IProjectElementGroup group) {
+		for (IProjectElement e : group.getElements()) {
+			out.add(e);
+			if (e instanceof IProjectElementGroup) {
+				getAllElementsRecurse(out, (IProjectElementGroup) e);
+			}
+		}
 	}
 
 	@Override

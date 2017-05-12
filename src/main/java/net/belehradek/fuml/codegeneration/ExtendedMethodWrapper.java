@@ -29,6 +29,9 @@ import org.modeldriven.alf.uml.TemplateSignature;
 import org.modeldriven.alf.uml.TemplateableElement;
 import org.modeldriven.alf.uml.StereotypeApplication.TaggedValue;
 
+import net.belehradek.fuml.core.UmlFrameworkWrapper;
+import net.belehradek.fuml.core.UmlWrapper;
+
 public class ExtendedMethodWrapper extends MethodWrapper {
 
 	protected Object rootModel;
@@ -40,13 +43,14 @@ public class ExtendedMethodWrapper extends MethodWrapper {
 
 	@Override
 	protected Object callMethod(String methodName) {
-		
 		if (model instanceof Package) {
+			Package p = (Package) model;
 			if (methodName.equals("classes")) {
-				List<NamedElement> classes = (List<NamedElement>) super.callMethod("getOwnedMember");
-				List<NamedElement> out = new ArrayList<>(classes);
-				out.removeIf(l -> !(l instanceof Class_));
-				return out;
+//				List<NamedElement> classes = (List<NamedElement>) super.callMethod("getOwnedMember");
+//				List<NamedElement> out = new ArrayList<>(classes);
+//				out.removeIf(l -> !(l instanceof Class_));
+//				return out;
+				return UmlFrameworkWrapper.getAllClasses(p, false);
 			}
 		}
 		

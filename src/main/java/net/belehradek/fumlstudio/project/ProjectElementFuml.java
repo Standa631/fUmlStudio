@@ -10,35 +10,16 @@ import net.belehradek.AwesomeIcon;
 import net.belehradek.Lib;
 import net.belehradek.fuml.core.XmiModelSaver;
 
-public class ProjectElementFuml implements IProjectElement  {
+public class ProjectElementFuml extends ProjectElementText  {
 	
-	protected File file;
-	protected String name;
-	protected IProject project;
+	protected final String GRAPH_EXTENSION = ".graph";
 
 	public ProjectElementFuml(IProject project, String name) {
-		this.project = project;
-		this.name = name;
-		this.file = new File(project.getFile(), "src/main/fuml/" + name + ".fuml");
-		createFile();
+		super(project, "src/main/fuml/" + name);
 	}
 	
 	public ProjectElementFuml(IProject project, File file) {
-		this.project = project;
-		this.name = file.getName();
-		this.file = file;
-		createFile();
-	}
-	
-	protected void createFile() {
-		try {
-			if (!file.exists()) {
-				System.out.println("Create element: " + file.getAbsolutePath());
-				file.createNewFile();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		super(project, file);
 	}
 	
 	public void createGraphFile(File newFile) {
@@ -52,15 +33,7 @@ public class ProjectElementFuml implements IProjectElement  {
 
 	public File getGraphicFile() {
 		if (file != null) {
-			File g = null;
-			String path = file.getAbsolutePath();
-			if (path.endsWith(".fuml")) {
-				g = new File(file.getAbsolutePath().replace(".fuml", ".graph"));
-			} else if (path.endsWith(".uml")) {
-				g = new File(file.getAbsolutePath().replace(".uml", ".graph"));
-			} else {
-				return null;
-			}
+			File g = new File(getGraphFileName());
 			if (!g.exists()) {
 				createGraphFile(g);
 			}
@@ -69,6 +42,13 @@ public class ProjectElementFuml implements IProjectElement  {
 			return null;
 		}
 	}
+	
+	public String getGraphFileName() {
+		String path = file.getAbsolutePath();
+		if (!path.endsWith(GRAPH_EXTENSION))
+			path += GRAPH_EXTENSION;
+		return path;
+	}
 
 	@Override
 	public Node getIcon() {
@@ -76,24 +56,9 @@ public class ProjectElementFuml implements IProjectElement  {
 	}
 
 	@Override
-	public File getFile() {
-		return file;
-	}
-
-	@Override
 	public String getType() {
 		return "fuml";
 	}	
-	
-	@Override
-	public String toString() {
-		return file.getName();
-	}
-	
-	@Override
-	public String getName() {
-		return file.getName();
-	}
 
 //	@Override
 //	public void save() {

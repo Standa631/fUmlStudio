@@ -4,10 +4,9 @@ import java.io.File;
 import java.io.IOException;
 
 import net.belehradek.fuml.core.AlfModelLoader;
-import net.belehradek.fuml.core.XmiModelLoader;
+//import net.belehradek.fuml.core.XmiModelLoader;
 import net.belehradek.fuml.core.XmiModelSaver;
 
-import org.eclipse.ui.actions.GlobalBuildAction;
 import org.modeldriven.alf.eclipse.units.RootNamespaceImpl;
 import org.modeldriven.alf.uml.Model;
 import org.modeldriven.alf.uml.Package;
@@ -74,9 +73,9 @@ public class Test {
 		
 		Global.log("--------------------------------------------------");
 		
-		XmiModelLoader xmiModelLoader2 = new XmiModelLoader(new File(libPath), new File(fumlBuildPath));
-		Package model4 = xmiModelLoader2.loadModel("out");
-		Global.log("Xmi load");
-		Global.log(model4);
+//		XmiModelLoader xmiModelLoader2 = new XmiModelLoader(new File(libPath), new File(fumlBuildPath));
+//		Package model4 = xmiModelLoader2.loadModel("out");
+//		Global.log("Xmi load");
+//		Global.log(model4);
 	}
 }

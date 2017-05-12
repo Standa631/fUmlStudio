@@ -27,7 +27,7 @@ public class ProjectTreeController extends TreeView<IProjectElement> {
 				Object value = selectedItem.getValue();
 				if (value instanceof IProjectElement) {
 					IProjectElement elem = (IProjectElement) value;
-					System.out.println("Selected Text : " + elem.getFile().getName());
+					System.out.println("Selected Text : " + elem.getName());
 					EventRouter.sendEvent(ProjectTreeController.this, new EventProjectElementSelected(elem));
 				}
 			}

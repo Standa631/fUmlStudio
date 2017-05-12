@@ -38,6 +38,12 @@
 	-fx-opacity: 0.9;
 }
 
+.package-node-header {
+	-fx-padding: 2 5 2 5;
+	-fx-background-color: linear-gradient(to bottom, rgb(60, 20, 20), rgb(80, 0, 0));
+	-fx-opacity: 0.9;
+}
+
 .titled-node-title {
 	-fx-font-size: 11;
 	-fx-text-fill: white;
@@ -167,4 +173,20 @@
 
 .titled-node-attribute, .titled-node-operation {
 	-fx-padding: 5;
+}
+
+.tree-connection .arrow-line {
+	-fx-stroke: darkslategrey;
+	-fx-effect: dropshadow(one-pass-box, rgba(180, 180, 180), 5, 0, 1, 1);
+}
+
+.tree-connection-background .arrow-line {
+	-fx-stroke-width: 9;
+	-fx-stroke: transparent;
+}
+
+.tree-connection .arrow-head {
+	-fx-stroke: darkslategrey;
+	-fx-fill: white;
+	-fx-effect: dropshadow(one-pass-box, rgba(180, 180, 180), 5, 0, 1, 1);
 }

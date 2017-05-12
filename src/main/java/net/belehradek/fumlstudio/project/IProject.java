@@ -10,11 +10,15 @@ public interface IProject extends IProjectElementGroup {
 	
 	public void loadProject(File folder);
 	
+	public void generateCode();
+	
 	public void build();
 	
 	public void debug();
 	
 	public void run();
+	
+	public void clean();
 	
 //	public void saveElement(IProjectElement element);
 }

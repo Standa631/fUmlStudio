@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.input.*?>
 <?import javafx.scene.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.text.*?>
@@ -60,9 +62,17 @@
             </TitledPane>
          </left>
          <right>
-            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" prefHeight="740.0" prefWidth="200.0" text="Tools" BorderPane.alignment="CENTER">
+            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="200.0" text="Tools" BorderPane.alignment="CENTER">
               <content>
-                <AnchorPane />
+                <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+                     <children>
+                        <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308">
+                           <children>
+                              <Pane prefHeight="200.0" prefWidth="200.0" />
+                              <Pane prefHeight="200.0" prefWidth="200.0" />
+                           </children>
+                        </VBox>
+                     </children></AnchorPane>
               </content>
             </TitledPane>
          </right>
@@ -76,13 +86,18 @@
                               <Menu mnemonicParsing="false" text="New">
                                 <items>
                                     <MenuItem mnemonicParsing="false" onAction="#actionNewProject" text="New project" />
-                                  <MenuItem mnemonicParsing="false" onAction="#actionNewElement" text="New source file" />
+                                  <MenuItem mnemonicParsing="false" onAction="#actionNewElement" text="New source file" visible="false" />
                                     <MenuItem mnemonicParsing="false" onAction="#newTransformationFile" text="New transformation" />
                                 </items>
                               </Menu>
                               <MenuItem mnemonicParsing="false" onAction="#openProject" text="Open project" />
                               <MenuItem mnemonicParsing="false" onAction="#loadSample" text="Load sample" />
                               <SeparatorMenuItem mnemonicParsing="false" />
+                              <MenuItem mnemonicParsing="false" onAction="#saveFile" text="Save file">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                                 </accelerator>
+                              </MenuItem>
                               <MenuItem mnemonicParsing="false" text="Import" />
                               <MenuItem mnemonicParsing="false" text="Export" />
                               <SeparatorMenuItem mnemonicParsing="false" />
@@ -105,18 +120,18 @@
                   </MenuBar>
                   <ToolBar>
                     <items>
-                        <Button mnemonicParsing="false" text="Refresh" />
-                      <Button mnemonicParsing="false" onAction="#saveFile" text="Save" />
-                        <Button mnemonicParsing="false" onAction="#newClassDiagram" text="New Class" />
-                        <Slider min="1.0" value="50.0" />
-                        <Button mnemonicParsing="false" text="Clean" />
-                        <Button mnemonicParsing="false" text="Build fUML" />
-                        <Button mnemonicParsing="false" onAction="#buildProject" text="Build ALF" />
-                        <Button mnemonicParsing="false" text="Build All" />
+                        <Button mnemonicParsing="false" text="Refresh File" />
+                      	<Button mnemonicParsing="false" onAction="#saveFile" text="Save File" />
                         <Separator orientation="VERTICAL" />
-                        <Button mnemonicParsing="false" onAction="#debugProject" text="Debug fUML" />
+                        <Button mnemonicParsing="false" onAction="#cleanProject" text="Clean" />
+                        <ComboBox fx:id="alfFileCombo" prefWidth="150.0" />
+                        <Button mnemonicParsing="false" onAction="#buildProject" text="Build" />
+                        <Button mnemonicParsing="false" onAction="#debugProject" text="Run" />
                         <Separator orientation="VERTICAL" />
-                        <Button mnemonicParsing="false" onAction="#runCodeGeneration" text="CodeGeneration" />
+                        <ComboBox fx:id="codeGenerationFileCombo" prefWidth="150.0" />
+                        <Button mnemonicParsing="false" onAction="#runCodeGeneration" text="GenerateCode" />
+                        <Separator orientation="VERTICAL" />
+                        <Button fx:id="imageButton" mnemonicParsing="false" text="Image" />
                     </items>
                   </ToolBar>
                </children>

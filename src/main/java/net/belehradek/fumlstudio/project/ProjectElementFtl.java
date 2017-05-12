@@ -6,60 +6,18 @@ import java.io.IOException;
 import javafx.scene.Node;
 import net.belehradek.AwesomeIcon;
 
-public class ProjectElementFtl implements IProjectElement {
-
-	protected File file;
-	protected String name;
-	protected IProject project;
+public class ProjectElementFtl extends ProjectElementText {
 
 	public ProjectElementFtl(IProject project, String name) {
-		name = name.replace('.', '_');
-		this.project = project;
-		this.name = name;
-		this.file = new File(project.getFile(), "src/main/ftl/" + name + ".ftl");
-		createFile();
+		super(project, "src\\main\\ftl\\" + name);
 	}
-
+	
 	public ProjectElementFtl(IProject project, File file) {
-		this.project = project;
-		this.name = file.getName();
-		this.file = file;
-		createFile();
-	}
-
-	protected void createFile() {
-		try {
-			if (!file.exists()) {
-				System.out.println("Create element: " + file.getAbsolutePath());
-				file.createNewFile();
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	@Override
-	public Node getIcon() {
-		return AwesomeIcon.TRANSFORM_FILE.node();
-	}
-
-	@Override
-	public File getFile() {
-		return file;
+		super(project, file);
 	}
 
 	@Override
 	public String getType() {
 		return "ftl";
-	}
-	
-	@Override
-	public String toString() {
-		return file.getName();
-	}
-
-	@Override
-	public String getName() {
-		return file.getName();
 	}
 }

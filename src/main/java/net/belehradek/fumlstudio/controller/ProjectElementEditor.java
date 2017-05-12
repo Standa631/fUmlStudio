@@ -5,7 +5,7 @@ import java.io.File;
 import javafx.scene.Node;
 import net.belehradek.fumlstudio.project.IProjectElement;
 
-public abstract class ProjectElementEditor {
+public abstract class ProjectElementEditor implements IProjectElementEditor {
 
 	protected IProjectElement projectElement;
 
@@ -17,7 +17,7 @@ public abstract class ProjectElementEditor {
 		this.projectElement = projectElement;
 	}
 
-	protected abstract void load();
+	public abstract void load();
 
 	public abstract void save();
 

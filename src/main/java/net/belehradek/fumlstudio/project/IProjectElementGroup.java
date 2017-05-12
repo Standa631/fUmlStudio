@@ -6,5 +6,7 @@ public interface IProjectElementGroup extends IProjectElement {
 	
 	public List<IProjectElement> getElements();
 	
+	public List<IProjectElement> getAllElements();
+	
 	public void addProjectElement(IProjectElement element);
 }
