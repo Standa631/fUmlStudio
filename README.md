@@ -1,2 +1,2 @@
-# fUml-Studio
-Deployment environment for creating applications in fUml and ALF.
+# fUmlStudio
+Development environment for creating applications in fUml and ALF.
