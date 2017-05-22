@@ -8,7 +8,12 @@ import de.tesis.dynaware.grapheditor.GConnectorSkin;
 import de.tesis.dynaware.grapheditor.GNodeSkin;
 import de.tesis.dynaware.grapheditor.model.GNode;
 import de.tesis.dynaware.grapheditor.utils.GeometryUtils;
+import de.tesis.dynaware.grapheditor.utils.ResizableBox;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.css.PseudoClass;
+import javafx.event.Event;
+import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -16,16 +21,18 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import net.belehradek.AwesomeIcon;
+import net.belehradek.Global;
 import net.belehradek.umleditor.GNodeSkinFix;
 import javafx.scene.control.Separator;
 
-public class ClassNodeSkin extends GNodeSkinFix {
+public class ClassNodeSkin<T> extends GNodeSkinFix {
 
     private static final String STYLE_CLASS_SELECTION_HALO = "titled-node-selection-halo";
     private static final String STYLE_CLASS_HEADER = "titled-node-header";
@@ -74,13 +81,6 @@ public class ClassNodeSkin extends GNodeSkinFix {
     @Override
     public void initialize() {
         super.initialize();
-        /*GNode node = getNode();
-        if (node instanceof ClassNode) {
-	        ClassNode cn = (ClassNode) getNode();
-	        title.setText("Class " + cn.name);
-        } else {
-        	title.setText("Class no class node");
-        }*/
     }
     
     public void setName(String name) {
@@ -142,6 +142,12 @@ public class ClassNodeSkin extends GNodeSkinFix {
     	Label attribute = new Label();
     	attribute.getStyleClass().setAll(STYLE_CLASS_ATTRIBUTE);
     	attribute.setText(text);
+    	attribute.setOnMouseClicked(new EventHandler<Event>() {
+			@Override
+			public void handle(Event event) {
+				Global.log("Click: " + event.getTarget());
+			}
+		});
     	attributes.getChildren().add(attribute);
 
     }
@@ -151,7 +157,6 @@ public class ClassNodeSkin extends GNodeSkinFix {
     	opeartion.getStyleClass().setAll(STYLE_CLASS_OPERATION);
     	opeartion.setText(text);
     	operations.getChildren().add(opeartion);
-
     }
 
     /**
@@ -168,6 +173,18 @@ public class ClassNodeSkin extends GNodeSkinFix {
         content.getChildren().add(attributes);
         content.getChildren().add(operations);
         getRoot().getChildren().add(content);
+        
+//		AnchorPane.setTopAnchor(content, 0.0);
+//        AnchorPane.setRightAnchor(content, 0.0);
+//        AnchorPane.setLeftAnchor(content, 0.0);
+//        AnchorPane.setBottomAnchor(content, 0.0);
+        
+//        content.heightProperty().addListener(new ChangeListener<Number>() {
+//			@Override
+//			public void changed(ObservableValue<? extends Number> observable, Number oldValue,Number newValue) {
+//				getRoot().setMinHeight((double)newValue);
+//			}
+//		});
 
 //        content.minWidthProperty().bind(getRoot().widthProperty());
 //        content.prefWidthProperty().bind(getRoot().widthProperty());
@@ -176,17 +193,14 @@ public class ClassNodeSkin extends GNodeSkinFix {
 //        content.prefHeightProperty().bind(getRoot().heightProperty());
 //        content.maxHeightProperty().bind(getRoot().heightProperty());
     }
-
-    /**
-     * Lays out all connectors.
-     */
+    
     private void layoutLeftAndRightConnectors() {
+    	double height = content.getHeight();
+    	double width = content.getWidth();
 
         final int inputCount = inputConnectorSkins.size();
-        final double inputOffsetY = (getRoot().getHeight() - HEADER_HEIGHT) / (inputCount + 1);
-
+        final double inputOffsetY = (height) / (inputCount + 1);
         for (int i = 0; i < inputCount; i++) {
-
             final GConnectorSkin inputSkin = inputConnectorSkins.get(i);
             final Node connectorRoot = inputSkin.getRoot();
 
@@ -194,24 +208,57 @@ public class ClassNodeSkin extends GNodeSkinFix {
             final double layoutY = GeometryUtils.moveOnPixel((i + 1) * inputOffsetY - inputSkin.getHeight() / 2);
 
             connectorRoot.setLayoutX(layoutX);
-            connectorRoot.setLayoutY(layoutY + HEADER_HEIGHT);
+            connectorRoot.setLayoutY(layoutY - (height - getRoot().getHeight()) / 2);
         }
 
         final int outputCount = outputConnectorSkins.size();
-        final double outputOffsetY = (getRoot().getHeight() - HEADER_HEIGHT) / (outputCount + 1);
-
+        final double outputOffsetY = (height) / (outputCount + 1);
         for (int i = 0; i < outputCount; i++) {
-
             final GConnectorSkin outputSkin = outputConnectorSkins.get(i);
             final Node connectorRoot = outputSkin.getRoot();
 
-            final double layoutX = GeometryUtils.moveOnPixel(getRoot().getWidth() - outputSkin.getWidth() / 2);
+            final double layoutX = GeometryUtils.moveOnPixel(width - outputSkin.getWidth() / 2);
             final double layoutY = GeometryUtils.moveOnPixel((i + 1) * outputOffsetY - outputSkin.getHeight() / 2);
 
             connectorRoot.setLayoutX(layoutX);
-            connectorRoot.setLayoutY(layoutY + HEADER_HEIGHT);
+            connectorRoot.setLayoutY(layoutY - (height - getRoot().getHeight()) / 2);
         }
     }
+
+//    private void layoutLeftAndRightConnectors() {
+//    	double height = getRoot().getHeight();
+//    	double width = getRoot().getWidth();
+//
+//        final int inputCount = inputConnectorSkins.size();
+//        final double inputOffsetY = (height - HEADER_HEIGHT) / (inputCount + 1);
+//
+//        for (int i = 0; i < inputCount; i++) {
+//
+//            final GConnectorSkin inputSkin = inputConnectorSkins.get(i);
+//            final Node connectorRoot = inputSkin.getRoot();
+//
+//            final double layoutX = GeometryUtils.moveOnPixel(0 - inputSkin.getWidth() / 2);
+//            final double layoutY = GeometryUtils.moveOnPixel((i + 1) * inputOffsetY - inputSkin.getHeight() / 2);
+//
+//            connectorRoot.setLayoutX(layoutX);
+//            connectorRoot.setLayoutY(layoutY + HEADER_HEIGHT);
+//        }
+//
+//        final int outputCount = outputConnectorSkins.size();
+//        final double outputOffsetY = (height - HEADER_HEIGHT) / (outputCount + 1);
+//
+//        for (int i = 0; i < outputCount; i++) {
+//
+//            final GConnectorSkin outputSkin = outputConnectorSkins.get(i);
+//            final Node connectorRoot = outputSkin.getRoot();
+//
+//            final double layoutX = GeometryUtils.moveOnPixel(width - outputSkin.getWidth() / 2);
+//            final double layoutY = GeometryUtils.moveOnPixel((i + 1) * outputOffsetY - outputSkin.getHeight() / 2);
+//
+//            connectorRoot.setLayoutX(layoutX);
+//            connectorRoot.setLayoutY(layoutY + HEADER_HEIGHT);
+//        }
+//    }
 
     /**
      * Adds the selection halo and initializes some of its values.

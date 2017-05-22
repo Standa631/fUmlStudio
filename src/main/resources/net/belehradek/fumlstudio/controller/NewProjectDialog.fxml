@@ -6,8 +6,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.layout.AnchorPane?>
 
-
-<AnchorPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/8">
+<AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <TitledPane collapsible="false" prefWidth="500.0" text="New project">
          <content>
@@ -29,8 +28,8 @@
                         <TextField fx:id="projectName" prefHeight="25.0" prefWidth="266.0" GridPane.columnIndex="1" />
                         <HBox alignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1">
                            <children>
-                              <TextField fx:id="rootLocation" prefWidth="500.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                              <Button mnemonicParsing="false" text="..." onAction="#openLocationDialog" />
+                              <TextField fx:id="rootLocation" onAction="#locationTextChanged" prefWidth="500.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              <Button mnemonicParsing="false" onAction="#openLocationDialog" text="..." />
                            </children>
                         </HBox>
                      </children>
@@ -40,8 +39,8 @@
                   </GridPane>
                   <HBox alignment="BOTTOM_RIGHT">
                      <children>
-                        <Button cancelButton="true" mnemonicParsing="false" text="Cancel" onAction="#cancel" />
-                        <Button defaultButton="true" mnemonicParsing="false" text="Finish" onAction="#finish" >
+                        <Button cancelButton="true" mnemonicParsing="false" onAction="#cancel" text="Cancel" />
+                        <Button defaultButton="true" mnemonicParsing="false" onAction="#finish" text="Finish">
                            <HBox.margin>
                               <Insets left="10.0" />
                            </HBox.margin>

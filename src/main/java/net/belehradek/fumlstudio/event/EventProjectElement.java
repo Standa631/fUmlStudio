@@ -2,10 +2,10 @@ package net.belehradek.fumlstudio.event;
 
 import net.belehradek.fumlstudio.project.IProjectElement;
 
-public class EventProjectElementSelected implements Event {
+public class EventProjectElement implements Event {
 	public IProjectElement element;
 	
-	public EventProjectElementSelected(IProjectElement element) {
+	public EventProjectElement(IProjectElement element) {
 		this.element = element;
 	}
 

@@ -66,4 +66,9 @@ public class ProjectElementGroupDir implements IProjectElementGroup {
 	public String toString() {
 		return getName();
 	}
+
+	@Override
+	public IProject getProject() {
+		return null;
+	}
 }

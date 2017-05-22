@@ -21,29 +21,30 @@
                         <Menu mnemonicParsing="false" text="New">
                           <items>
                               <MenuItem mnemonicParsing="false" onAction="#actionNewProject" text="New project" />
-                            <MenuItem mnemonicParsing="false" onAction="#actionNewElement" text="New source file" visible="false" />
-                              <MenuItem mnemonicParsing="false" onAction="#newTransformationFile" text="New transformation" />
+                            <MenuItem mnemonicParsing="false" onAction="#newSourceFile" text="New source file" />
+                              <MenuItem mnemonicParsing="false" onAction="#newTransformationFile" text="New transformation file" />
                           </items>
                         </Menu>
                         <MenuItem mnemonicParsing="false" onAction="#openProject" text="Open project" />
-                        <MenuItem mnemonicParsing="false" onAction="#loadSample" text="Load sample" />
+                        <MenuItem mnemonicParsing="false" onAction="#loadSample" text="Load sample" visible="false" />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" onAction="#saveFile" text="Save file">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
                         </MenuItem>
-                        <MenuItem mnemonicParsing="false" text="Import" />
-                        <MenuItem mnemonicParsing="false" text="Export" />
+                        <MenuItem mnemonicParsing="false" onAction="#deleteFile" text="Delete File" />
+                        <MenuItem mnemonicParsing="false" text="Import" visible="false" />
+                        <MenuItem mnemonicParsing="false" text="Export" visible="false" />
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Settings" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" text="Settings" visible="false" />
+                        <SeparatorMenuItem mnemonicParsing="false" visible="false" />
                     	  <MenuItem mnemonicParsing="false" onAction="#exitApp" text="Exit" />
                   </items>
                 </Menu>
-                <Menu mnemonicParsing="false" text="Edit">
+                <Menu mnemonicParsing="false" text="Edit" visible="false">
                   <items>
-                    <MenuItem mnemonicParsing="false" text="Delete" />
+                    <MenuItem mnemonicParsing="false" text="Save file" />
                   </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">
@@ -53,32 +54,28 @@
                 </Menu>
               </menus>
             </MenuBar>
-            <ToolBar>
+            <ToolBar prefHeight="35.0">
               <items>
-                  <Button mnemonicParsing="false" text="Refresh File" />
-                	<Button mnemonicParsing="false" onAction="#saveFile" text="Save File" />
-                  <Separator orientation="VERTICAL" />
                   <Button mnemonicParsing="false" onAction="#cleanProject" text="Clean" />
                   <ComboBox fx:id="alfFileCombo" prefWidth="150.0" />
                   <Button mnemonicParsing="false" onAction="#buildProject" text="Build" />
                   <Button mnemonicParsing="false" onAction="#debugProject" text="Run" />
                   <Separator orientation="VERTICAL" />
                   <ComboBox fx:id="codeGenerationFileCombo" prefWidth="150.0" />
+                  <TextField fx:id="namespacePrefix" promptText="Namespace prefix" />
                   <Button mnemonicParsing="false" onAction="#runCodeGeneration" text="GenerateCode" />
-                  <Separator orientation="VERTICAL" />
-                  <Button fx:id="imageButton" mnemonicParsing="false" text="Image" />
               </items>
             </ToolBar>
             <SplitPane dividerPositions="0.7575757575757576" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
         <items>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                <children>
-                  <SplitPane dividerPositions="0.2, 0.8" prefHeight="160.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                  <SplitPane dividerPositions="0.2" prefHeight="160.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                     <items>
 <!--                       <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0" />
                       <AnchorPane fx:id="tabsManagerConteiner" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0" />
                       <AnchorPane prefHeight="200.0" prefWidth="200.0" /> -->
-                      <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" prefHeight="740.0" prefWidth="200.0" text="Project">
+                      <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" prefHeight="740.0" prefWidth="200.0" text="Project" SplitPane.resizableWithParent="false">
 			               <content>
 			               		<AnchorPane fx:id="projectTreeConteiner" maxHeight="1.7976931348623157E308">
 			                     <children>
@@ -104,17 +101,17 @@
 		               </content>
 		            </TitledPane>
             
-            		<TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="200.0" text="Tools" BorderPane.alignment="CENTER">
+            		<!-- <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefWidth="200.0" text="Tools" BorderPane.alignment="CENTER">
 		              <content>
 		                <AnchorPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
 		              </content>
-		            </TitledPane>
+		            </TitledPane> -->
             
                     </items>
                   </SplitPane>
                </children>
             </AnchorPane>
-            <AnchorPane prefHeight="199.0" prefWidth="1022.0">
+            <AnchorPane prefHeight="199.0" prefWidth="1022.0" SplitPane.resizableWithParent="false">
                <children>
                <VBox maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" BorderPane.alignment="CENTER">
                   <children>
@@ -133,7 +130,12 @@
                      <!-- <TextArea fx:id="logTextArea" editable="false" prefHeight="150.0" promptText="Log" /> -->
                      <HBox maxHeight="20.0" minHeight="20.0" prefHeight="20.0">
                         <children>
-                           <Label text="Statusbar" />
+                                    <ProgressBar fx:id="progressBar" prefWidth="200.0" progress="0.0" />
+                                    <Label fx:id="progressLabel" text="All done">
+                                       <HBox.margin>
+                                          <Insets left="10.0" />
+                                       </HBox.margin>
+                                    </Label>
                         </children>
                         <padding>
                            <Insets bottom="3.0" left="3.0" right="3.0" top="3.0" />

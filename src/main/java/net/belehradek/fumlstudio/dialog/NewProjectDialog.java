@@ -33,7 +33,7 @@ public abstract class NewProjectDialog {
     @FXML
     public void finish() throws IOException {
     	stage.close();
-    	finishCallback(location);
+    	finishCallback(new File(new File(rootLocation.getText()), projectName.getText()));
     }
     
     @FXML
@@ -58,26 +58,29 @@ public abstract class NewProjectDialog {
         	rootLocation.setText(location.getAbsolutePath());
         }
     }
+    
+    @FXML
+    public void locationTextChanged() {
+    	
+    }
    
     public void showWindow() throws IOException {
         final FXMLLoader loader = new FXMLLoader(getClass().getResource("NewProjectDialog.fxml"));
         loader.setController(this);
         final Parent root = loader.load();
-        //final Scene scene = new Scene(root, 250, 150);
         final Scene scene = new Scene(root);
         stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.initStyle(StageStyle.UNDECORATED);
-        //stage.initOwner(emailField.getScene().getWindow());
         stage.setScene(scene);
         stage.show();
         
         //defaultni jmeno projektu
-        projectName.setText("My fUML project");
+        projectName.setText("fUmlProject");
         projectName.requestFocus();
         
         //defaultni umisteni
-        location = new File(System.getProperty("user.home")/* + "\\fUmlProjects"*/);
+        location = new File(System.getProperty("user.home"));
         rootLocation.setText(location.getAbsolutePath());
     }
 }

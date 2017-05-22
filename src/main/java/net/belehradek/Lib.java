@@ -19,4 +19,12 @@ public class Lib {
 	/*public static void callNonpublicMethod(Class<?> class_, Object object, String methodName, Object[] params) {
 		
 	}*/
+	
+	public static boolean endsWith(String text, String[] end) {
+		for (String e : end) {
+			if (text.endsWith(e))
+				return true;
+		}
+		return false;
+	}
 }

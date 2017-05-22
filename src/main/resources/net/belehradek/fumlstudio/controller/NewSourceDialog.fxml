@@ -8,7 +8,7 @@
 
 <AnchorPane xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <TitledPane collapsible="false" prefWidth="500.0" text="New transformation file">
+      <TitledPane collapsible="false" prefWidth="500.0" text="New ALF file">
          <content>
             <VBox alignment="CENTER">
                <children>
@@ -25,9 +25,9 @@
                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                     </rowConstraints>
                      <children>
-                        <Label text="Transformation file name:" />
+                        <Label text="ALF file path:" />
                         <Label text="Diagram type:" visible="false" GridPane.rowIndex="1" />
-                        <TextField fx:id="transformationId" prefHeight="25.0" prefWidth="266.0" text="transformation.ftl" GridPane.columnIndex="1" />
+                        <TextField fx:id="transformationId" prefHeight="25.0" prefWidth="266.0" promptText="package/name.alf" text="package/name.alf" GridPane.columnIndex="1" />
                         <RadioButton fx:id="typeActivity" mnemonicParsing="false" text="Activity diagram" visible="false" GridPane.columnIndex="1" GridPane.rowIndex="2">
                            <toggleGroup>
                               <ToggleGroup fx:id="type" />

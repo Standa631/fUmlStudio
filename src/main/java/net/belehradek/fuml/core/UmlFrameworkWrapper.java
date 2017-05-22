@@ -13,18 +13,25 @@ import org.modeldriven.alf.uml.Activity;
 import org.modeldriven.alf.uml.ActivityEdge;
 import org.modeldriven.alf.uml.ActivityNode;
 import org.modeldriven.alf.uml.ActivityParameterNode;
+import org.modeldriven.alf.uml.AddStructuralFeatureValueAction;
 import org.modeldriven.alf.uml.Behavior;
+import org.modeldriven.alf.uml.CallAction;
 import org.modeldriven.alf.uml.CallBehaviorAction;
 import org.modeldriven.alf.uml.CallOperationAction;
 import org.modeldriven.alf.uml.Class_;
 import org.modeldriven.alf.uml.Classifier;
+import org.modeldriven.alf.uml.Clause;
+import org.modeldriven.alf.uml.ConditionalNode;
 import org.modeldriven.alf.uml.CreateObjectAction;
 import org.modeldriven.alf.uml.Element;
+import org.modeldriven.alf.uml.ExecutableNode;
 import org.modeldriven.alf.uml.ForkNode;
 import org.modeldriven.alf.uml.InputPin;
+import org.modeldriven.alf.uml.InvocationAction;
 import org.modeldriven.alf.uml.LiteralBoolean;
 import org.modeldriven.alf.uml.LiteralInteger;
 import org.modeldriven.alf.uml.LiteralString;
+import org.modeldriven.alf.uml.LoopNode;
 import org.modeldriven.alf.uml.NamedElement;
 import org.modeldriven.alf.uml.ObjectFlow;
 import org.modeldriven.alf.uml.Operation;
@@ -32,18 +39,26 @@ import org.modeldriven.alf.uml.OutputPin;
 import org.modeldriven.alf.uml.Package;
 import org.modeldriven.alf.uml.Parameter;
 import org.modeldriven.alf.uml.Pin;
+import org.modeldriven.alf.uml.PrimitiveType;
 import org.modeldriven.alf.uml.Property;
 import org.modeldriven.alf.uml.StructuredActivityNode;
+import org.modeldriven.alf.uml.TestIdentityAction;
 import org.modeldriven.alf.uml.Type;
 import org.modeldriven.alf.uml.ValueSpecification;
 import org.modeldriven.alf.uml.ValueSpecificationAction;
 
-import net.belehradek.Global;
-
 public class UmlFrameworkWrapper extends UmlWrapper {
 
-	public static String[] libraryPrefixes = { "Model::Alf", "Model::FoundationalModelLibrary", "Alf::Library",
-			"FoundationalModelLibrary", "PrimitiveTypes" };
+	public static String[] libraryPrefixes = { 
+			"Model::Alf", 
+			"Model::FoundationalModelLibrary", 
+			"Alf::Library",
+			"FoundationalModelLibrary", 
+			"PrimitiveTypes",
+			
+			"Model::ActivityLibrary",
+			"Model::PersistentLibrary",
+			"Model::App"};
 
 	public static String activityGeneral = "Model::ActivityLibrary::Activity";
 	public static String persistentGeneral = "Model::PersistentLibrary::Persistent";
@@ -66,8 +81,24 @@ public class UmlFrameworkWrapper extends UmlWrapper {
 	}
 
 	public static boolean isStartActivity(Operation o) {
-		// return o.getName().toLowerCase().matches("go.*activity");
-		return o.getName().equals(startActivityOperation);
+		if (o.getOwnedParameter().size() != 2)
+			return false;
+		Parameter p1 = o.getOwnedParameter().get(0);
+		if (p1.getLower() != 0 || p1.getUpper() != 0)
+			return false;
+		if (!(p1.getType() instanceof Class_))
+			return false;
+		Class_ c = (Class_) p1.getType();
+		if (!isGeneralized(c, activityGeneral))
+			return false;
+		Parameter p2 =  o.getOwnedParameter().get(1);
+		if (p2.getLower() != 0 || p2.getUpper() != -1)
+			return false;
+		if (!(p2.getType() instanceof PrimitiveType))
+			return false;
+		if (!p2.getType().getName().equals("String"))
+			return false;
+		return true;
 	}
 
 	public static boolean isPersistent(Class_ c) {
@@ -85,6 +116,30 @@ public class UmlFrameworkWrapper extends UmlWrapper {
 		}
 		return null;
 	}
+	
+	public static List<Property> getAttributesNoDefault(Class_ c) {
+		List<Property> out = new ArrayList<>(c.getOwnedAttribute());
+		out.removeIf(l -> l.getName().contains("$"));
+		return out;
+	}
+	
+	public static List<Operation> getOperationsNoDefault(Class_ c) {
+		List<Operation> out = new ArrayList<>(c.getOwnedOperation());
+		out.removeIf(l -> l.getName().contains("$") || l.getName().equals("destroy"));
+		return out;
+	}
+	
+	public static List<Activity> getActivitiesNoDefault(Class_ c) {
+		List<Activity> out = new ArrayList<>();
+		for (Classifier elem : c.getNestedClassifier()) {
+			if (elem instanceof Activity && !elem.getName().contains("$")) {
+				Activity a = (Activity) elem;
+				out.add(a);
+			}
+		}
+		return out;
+	}
+		
 
 	public static List<Class_> getAllClasses(Package pack, boolean library) {
 		List<NamedElement> classifiers = pack.getOwnedMember();
@@ -118,15 +173,6 @@ public class UmlFrameworkWrapper extends UmlWrapper {
 			}
 		}
 		return out;
-	}
-
-	public static String getActivityChange(Operation o) {
-		Pattern pattern = Pattern.compile("go(.*Activity)");
-		Matcher matcher = pattern.matcher(o.getName());
-		if (matcher.find()) {
-			return matcher.group(1);
-		}
-		return null;
 	}
 
 	// ---------------------------------------------------------------------EDGE
@@ -207,6 +253,75 @@ public class UmlFrameworkWrapper extends UmlWrapper {
 		}
 	}
 
+	public static String activityNodeToString(ActivityNode node, int level, boolean io) {
+		String space = String.join("", Collections.nCopies(level, " "));
+		String out = "";
+
+		if (!io) {
+			out = node.getName() + "  " + node.getClass().getName() + "\n";
+			return out;
+		}
+
+		// strukturovana aktivita - ma piny
+		if (node instanceof StructuredActivityNode) {
+			StructuredActivityNode san = (StructuredActivityNode) node;
+			for (InputPin ip : san.getInput()) {
+				out += space + "-IP: " + inPinToString(ip) + "\n";
+				for (ActivityEdge ie : ip.getIncoming()) {
+					out += space + "--IE: " + inEdgeToString(ie) + "\n";
+				}
+			}
+			for (OutputPin op : san.getOutput()) {
+				out += space + "-OP: " + outPinToString(op) + "\n";
+				for (ActivityEdge oe : op.getOutgoing()) {
+					out += space + "--OE: " + inEdgeToString(oe) + "\n";
+				}
+			}
+		}
+
+		for (ActivityEdge ie : node.getIncoming()) {
+			out += space + "-IE: " + inEdgeToString(ie) + "\n";
+		}
+		for (ActivityEdge oe : node.getOutgoing()) {
+			out += space + "-OE: " + outEdgeToString(oe) + "\n";
+		}
+
+		if (node instanceof CallAction) {
+			CallAction cba = (CallAction) node;
+			for (InputPin ip : cba.getArgument()) {
+				out += space + "-IA: " + inPinToString(ip) + "\n";
+				for (ActivityEdge ie : ip.getIncoming()) {
+					out += space + "--IE: " + inEdgeToString(ie) + "\n";
+				}
+			}
+			for (OutputPin op : cba.getResult()) {
+				out += space + "-OA: " + outPinToString(op) + "\n";
+				for (ActivityEdge oe : op.getOutgoing()) {
+					out += space + "--OE: " + inEdgeToString(oe) + "\n";
+				}
+			}
+		}
+
+		return out;
+	}
+
+	public static String inPinToString(InputPin pin) {
+		String out = pin.getName() + "  " + pin.getClass().getName();
+		return out;
+	}
+
+	public static String outPinToString(OutputPin pin) {
+		return pin.getName() + "  " + pin.getClass().getName();
+	}
+
+	public static String inEdgeToString(ActivityEdge edge) {
+		return edge.getSource().getName() + "  " + edge.getClass().getName();
+	}
+
+	public static String outEdgeToString(ActivityEdge edge) {
+		return edge.getTarget().getName() + "  " + edge.getClass().getName();
+	}
+
 	public static void getActivityBodyStringRecurse(StringBuilder out, int level, ActivityNode node) {
 		boolean doit = true;
 		if (done.contains(node))
@@ -214,329 +329,15 @@ public class UmlFrameworkWrapper extends UmlWrapper {
 		done.add(node);
 
 		String space = String.join("", Collections.nCopies(level, " "));
-		out.append(space + (doit ? "" : "*") + node.getName() + "  " + node.getClass().getName() + "\n");
+		out.append(space + (doit ? "" : "*") + activityNodeToString(node, level, false));
 
 		if (!doit)
 			return;
 
-		for (ActivityEdge inEdge : node.getIncoming()) {
-			ActivityNode source = inEdge.getSource();
-
-			if (source instanceof Pin) {
-				Pin p = (Pin) source;
-				ActivityNode e = (ActivityNode) p.getOwner();
-				out.append(space + "-IN: -> " + e.getName() + "  " + e.getClass().getName() + "\n");
-				if (doit)
-					getActivityBodyStringRecurse(out, level + 1, e);
-			} else {
-				out.append(space + "-IN: " + source.getName() + "  " + source.getClass().getName() + "\n");
-				if (doit)
-					getActivityBodyStringRecurse(out, level + 1, source);
-			}
-		}
-
-		for (ActivityEdge outEdge : node.getOutgoing()) {
-			ActivityNode target = outEdge.getTarget();
-
-			out.append(space + "-OU: " + target.getName() + "  " + target.getClass().getName() + "\n");
-			getActivityBodyStringRecurse(out, level + 1, target);
-
-			if (target instanceof Pin) {
-				Pin p = (Pin) target;
-				ActivityNode e = (ActivityNode) p.getOwner();
-				out.append(space + "-OU: -> " + e.getName() + "  " + e.getClass().getName() + "\n");
-				if (doit)
-					getActivityBodyStringRecurse(out, level + 1, e);
-			} else {
-				out.append(space + "-OU: " + target.getName() + "  " + target.getClass().getName() + "\n");
-				if (doit)
-					getActivityBodyStringRecurse(out, level + 1, target);
-			}
-		}
-
-		// TODO:
-		/*
-		 * if (node instanceof StructuredActivityNode) { StructuredActivityNode
-		 * snode = (StructuredActivityNode) node; for (InputPin inPin :
-		 * snode.getStructuredNodeInput()) { inPin.getIncoming()
-		 * 
-		 * ActivityNode source = inEdge.getSource();
-		 * 
-		 * if (source instanceof Pin) { Pin p = (Pin) source; ActivityNode e =
-		 * (ActivityNode) p.getOwner(); out.append(space + "-IN: -> " +
-		 * e.getName() + "  " + e.getClass().getName() + "\n"); if (doit)
-		 * getActivityBodyStringRecurse(out, level + 1, e); } else {
-		 * out.append(space + "-IN: " + source.getName() + "  " +
-		 * source.getClass().getName() + "\n"); if (doit)
-		 * getActivityBodyStringRecurse(out, level + 1, source); } }
-		 * 
-		 * for (ActivityEdge outEdge : node.getOutgoing()) { ActivityNode target
-		 * = outEdge.getTarget();
-		 * 
-		 * out.append(space + "-OU: " + target.getName() + "  " +
-		 * target.getClass().getName() + "\n");
-		 * getActivityBodyStringRecurse(out, level + 1, target);
-		 * 
-		 * if (target instanceof Pin) { Pin p = (Pin) target; ActivityNode e =
-		 * (ActivityNode) p.getOwner(); out.append(space + "-OU: -> " +
-		 * e.getName() + "  " + e.getClass().getName() + "\n"); if (doit)
-		 * getActivityBodyStringRecurse(out, level + 1, e); } else {
-		 * out.append(space + "-OU: " + target.getName() + "  " +
-		 * target.getClass().getName() + "\n"); if (doit)
-		 * getActivityBodyStringRecurse(out, level + 1, target); } } }
-		 */
+		out.append(activityNodeToString(node, level, true));
 	}
 
 	// --------------------------
 
-	// public static ActivityNode getSourceNode(ActivityEdge edge) {
-	// ActivityNode source = edge.getSource();
-	// //if (source.getin)
-	// }
-	//
-	// public static ActivityNode getTargetNodes(ActivityEdge edge) {
-	//
-	// }
-
-	static int tmpCounter = 0;
-	static Map<String, String> varType = new HashMap<>();
-	static Map<Element, String> tmpVar = new HashMap<>();
-
-	public static String getTmpVar() {
-		return "_tmp_" + tmpCounter++;
-	}
-
-	public static String getActivityBodyCode(Activity activity) {
-		varType.clear();
-		tmpVar.clear();
-		tmpCounter = 0;
-
-		StringBuilder s = new StringBuilder();
-		getActivityBodyCodeRecurse(s, 0, activity.getNode());
-		return s.toString();
-	}
-
-	public static void getActivityBodyCodeRecurse(StringBuilder out, int level, List<ActivityNode> nodes) {
-		for (ActivityNode n : nodes) {
-			getActivityBodyCodeRecurse(out, level + 1, n);
-			if (n instanceof StructuredActivityNode) {
-				StructuredActivityNode sn = (StructuredActivityNode) n;
-				getActivityBodyCodeRecurse(out, level + 1, sn.getNode());
-			}
-		}
-	}
-
-	public static void getActivityBodyCodeRecurse(StringBuilder out, int level, ActivityNode node) {
-		nodeToCode(out, node);
-	}
-
-	public static String objectToVar(Object o) {
-		return "_" + System.identityHashCode(o);
-	}
-
-	public static String getInBracket(String in) {
-		Pattern pattern = Pattern.compile("[^(]\\(([^)]*)\\)");
-		Matcher matcher = pattern.matcher(in);
-		if (matcher.find()) {
-			return matcher.group(1);
-		}
-		return null;
-	}
-
-	public static String getInBracket(String in, String start) {
-		Pattern pattern = Pattern.compile(start + "\\(([^)]*)\\)");
-		Matcher matcher = pattern.matcher(in);
-		if (matcher.find()) {
-			return matcher.group(1);
-		}
-		return null;
-	}
-
-	public static String transformFunctionName(String name) {
-		if (name.equals("Div")) {
-			return "/";
-		} else if (name.equals("Concat")) {
-			return "+";
-		}
-		return name;
-	}
 	
-	public static boolean isInfix(String name) {
-		return name.equals("+") || name.equals("-") || name.equals("*") || name.equals("/");
-	}
-
-	public static String getForkIn(ForkNode node) {
-		return "";
-	}
-
-	public static void nodeToCode(StringBuilder out, ActivityNode node) {
-		boolean showClean = true;
-
-		if (!showClean)
-			out.append("//-" + node.getName() + "  " + node.getClass().getName() + "\n");
-
-		// try {
-		if (node instanceof ValueSpecificationAction) {
-			/*
-			 * ValueSpecificationAction vsa = (ValueSpecificationAction) node;
-			 * ValueSpecification vs = vsa.getValue(); //TODO: boolean, integer,
-			 * null, real, string, unlimitedNatural String var =
-			 * objectToVar(vsa.getOutput().get(0).getOutgoing().get(0).
-			 * getTarget()); out.append(var + " = "); if (vs instanceof
-			 * LiteralString) { LiteralString ls = (LiteralString) vs;
-			 * out.append("\"" + ls.getValue() + "\""); } else if (vs instanceof
-			 * LiteralInteger) { LiteralInteger li = (LiteralInteger) vs;
-			 * out.append("" + li.getValue()); } else {
-			 * out.append(vs.toString()); } out.append(";"); out.append("\n");
-			 */
-		} else if (node instanceof CallBehaviorAction || node instanceof CallOperationAction
-				|| node instanceof CreateObjectAction) {
-			Action ac = null;
-			String name = null;
-
-			if (node instanceof CallBehaviorAction) {
-				CallBehaviorAction cba = (CallBehaviorAction) node;
-				ac = cba;
-				Behavior b = cba.getBehavior();
-				name = b.getName();
-			}
-
-			if (node instanceof CallOperationAction) {
-				CallOperationAction cba = (CallOperationAction) node;
-				ac = cba;
-				Operation b = cba.getOperation();
-				name = b.getName();
-			}
-
-			if (node instanceof CreateObjectAction) {
-				CreateObjectAction cba = (CreateObjectAction) node;
-				ac = cba;
-				Classifier b = cba.getClassifier();
-				name = b.getName();
-			}
-
-			String ret = "";
-			StructuredActivityNode parent = (StructuredActivityNode) ac.getOwner();
-			List<OutputPin> outPins = parent.getStructuredNodeOutput();
-			if (outPins.size() > 0) {
-				List<ActivityEdge> edges = outPins.get(0).getOutgoing();
-				if (edges.size() > 0) {
-					ActivityNode retNode = edges.get(0).getTarget();
-					ret = retNode.getName();
-				} else {
-					Global.log("No edges");
-				}
-			} else {
-				Global.log("No out pins");
-			}
-			
-			if (ret.startsWith("Fork(")) {
-				// promenna - Fork(x)@14984
-				ret = getInBracket(ret);
-			} else if (ret.startsWith("Call(")) {
-				// docasna promenna - Call(+).arggument(x)
-				// Element elm = retNode.getOwner().getOwner();
-				String var = getTmpVar();
-
-				Element elm = node.getOwner();
-				tmpVar.put(elm, var);
-				Global.log("Put tmp: " + elm + " -> " + var);
-
-				ret = "var " + var;
-			}
-			
-			if (!ret.isEmpty())
-				out.append(ret + " = ");
-			
-			name = transformFunctionName(name);
-
-			if (!isInfix(name))
-				out.append(name + "(");
-
-			boolean first = true;
-			for (InputPin ip : ac.getInput()) {
-				if (!first) {
-					if (isInfix(name))
-						out.append(" " + name + " ");
-					else
-						out.append(", ");
-				}
-				first = false;
-
-				ActivityNode n = ip.getIncoming().get(0).getSource();
-				if (n instanceof OutputPin) {
-					OutputPin outPin = (OutputPin) n;
-					String paramName = null;
-					if (outPin.getName().startsWith("Value")) {
-						paramName = getInBracket(outPin.getName());
-					} else {
-						Element elm = outPin.getOwner();
-						paramName = tmpVar.get(elm);
-						Global.log("Get tmp: " + elm + " -> " + paramName);
-					}
-					out.append(paramName);
-				} else if (n instanceof ForkNode) {
-					ForkNode fn = (ForkNode) n;
-					String paramName = getInBracket(fn.getName());
-					out.append(paramName);
-				}
-			}
-
-			if (!isInfix(name))
-				out.append(")");
-
-			out.append(";");
-			out.append("\n");
-		} else if (node instanceof ForkNode) {
-			ForkNode fn = (ForkNode) node;
-			ActivityNode source = fn.getIncoming().get(0).getSource();
-
-			// parametr do forku - nic negenerovat
-			if (source instanceof InputPin) {
-
-			} else if (source instanceof ForkNode || // z promenne
-					(source instanceof OutputPin && source.getName().startsWith("Value(")) // z literalu
-			) {
-				String var = getInBracket(fn.getName());
-				String typ = "";
-				if (!varType.containsKey(var)) {
-					//TODO: typ
-					typ = "var";
-					varType.put(var, typ);
-					typ += " ";
-				}
-				
-				//promenna v objektu -> cil v OUT:
-				if (var.startsWith("LeftHandSide@")) {
-					InputPin write = (InputPin) fn.getOutgoing().get(0).getTarget();
-					typ = "";
-					var = ((NamedElement)write.getOwner()).getName();
-					var = "this." + getInBracket(var).replace("::", ".");
-				}
-				
-				out.append(typ + var + " = " + getInBracket(source.getName()) + ";");
-			}
-			out.append("\n");
-		} else if (node instanceof StructuredActivityNode) {
-			StructuredActivityNode sn = (StructuredActivityNode) node;
-
-			// deklarace lokalni promenne
-			if (node.getName().startsWith("LocalNameDeclarationStatement@")) {
-
-			} else if (node.getName().startsWith("ExpressionStatement@")) {
-
-			} else if (node.getName().startsWith("RightHandSide@")) {
-				Global.log("RightHandSide");
-			}
-
-		} else if (!showClean) {
-			out.append("//<NO-CODE-FOR>\n");
-			if (node.getName().startsWith("Tuple")) {
-				Global.log("Tuple");
-			}
-		}
-		// } catch (Exception e) {
-		// out.append("//<ERROR> " + e.toString() + "\n");
-		// }
-	}
 }

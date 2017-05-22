@@ -13,6 +13,7 @@ import org.modeldriven.alf.uml.Property;
 import de.tesis.dynaware.grapheditor.model.GConnection;
 import de.tesis.dynaware.grapheditor.model.GConnector;
 import de.tesis.dynaware.grapheditor.model.GNode;
+import javafx.application.Platform;
 import net.belehradek.Global;
 import net.belehradek.fuml.core.UmlFrameworkWrapper;
 import net.belehradek.fuml.core.UmlWrapper;
@@ -41,6 +42,11 @@ public class GraphicEditorActivity extends GraphicEditorClass {
 	}
 	
 	@Override
+	protected void mapInheritance(Class_ class_, Class_ super_) {
+		//super.mapInheritance(class_, super_);
+	}
+	
+	@Override
 	protected void mapAttribute(ClassNodeSkin skin, Property p) {
 
 	}
@@ -57,21 +63,17 @@ public class GraphicEditorActivity extends GraphicEditorClass {
 	protected void createConnections() {
 		for (Operation o : toMakeConnection) {
 			GNode sourceNode = fingNode(o.getClass_().getQualifiedName());
-			GConnector sourceConnector = sourceNode.getConnectors().get(1);
-			
-//			String targetName = o.getName();
-//			targetName = targetName.substring(2);
-//			Class_ cl = UmlWrapper.findClassByName(model, targetName);
+			GConnector sourceConnector = findBestConnector(sourceNode);
 			
 			Class_ cl = UmlFrameworkWrapper.getStartActivity(o);
-			
 			GNode targetNode = fingNode(cl.getQualifiedName());
-			GConnector targetConnector = targetNode.getConnectors().get(0);
+			GConnector targetConnector = findBestConnector(targetNode, sourceConnector);
 			
 			String id = sourceNode.getId() + "-" + targetNode.getId();			
 			if (findConnection(id) == null) {
-				GConnection con = addConnection(sourceConnector, targetConnector);
-				con.setId(id);
+				GConnection con = addAssoctioationConnection(sourceConnector, targetConnector);
+				if (con != null)
+					con.setId(id);	
 			}
 		}
 	}

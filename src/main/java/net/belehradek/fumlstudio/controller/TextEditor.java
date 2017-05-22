@@ -14,7 +14,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.text.Font;
-import net.belehradek.fuml.core.AlfModelLoader;
 
 public class TextEditor extends ProjectElementEditor {
 

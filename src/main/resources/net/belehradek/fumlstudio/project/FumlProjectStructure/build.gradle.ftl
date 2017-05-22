@@ -1,3 +1,6 @@
+apply plugin: 'java'
+apply plugin: 'FumlPlugin'
+
 buildscript {
     repositories {
         maven {
@@ -6,7 +9,14 @@ buildscript {
         }
     }
     dependencies {
-        classpath group: 'net.belehradek.fuml.gradle', name: 'fUmlPlugin', version: '0.1'
+        classpath group: 'net.belehradek.fuml.gradle', name: 'FumlPlugin', version: '0.1'
     }
 }
-apply plugin: 'fUmlPlugin'
+
+fUmlSettings {
+	libPath = gradle.ext.FumlSettingsLibPath
+	toolsPath = gradle.ext.FumlSettingsToolsPath
+	unitName = gradle.ext.FumlSettingsUnitName
+	transFile = gradle.ext.FumlSettingsTransformationFile
+	namespacePrefix = gradle.ext.FumlSettingsNamespacePrefix
+}

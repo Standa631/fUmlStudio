@@ -1,4 +1,4 @@
-package net.belehradek;
+package net.belehradek.fuml.core;
 
 import java.io.IOException;
 import java.io.OutputStream;

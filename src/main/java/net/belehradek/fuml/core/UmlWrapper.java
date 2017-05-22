@@ -17,22 +17,12 @@ import org.modeldriven.alf.uml.StructuredActivityNode;
 
 import net.belehradek.Global;
 
+//import net.belehradek.Global;
+
 import org.modeldriven.alf.uml.NamedElement;
 import org.modeldriven.alf.uml.Operation;
 
 public class UmlWrapper {
-	
-	public static List getAllOfType(List in, Class<?> type) {
-		List out = new ArrayList<>(in);
-		for (Object o : in) {
-			//if (type.isInstance(o)) { //bere i subclass
-			if (type.equals(o.getClass())) { //bere jen shodnou tridu
-				Global.log(o + " instanceof " + type);
-				out.add(o);
-			}
-		}
-		return out;
-	}
 	
 	public static boolean isGeneralized(Classifier classifier, String generalQualifiedName) {
 		for (Classifier c : classifier.getGeneral()) {
@@ -107,12 +97,12 @@ public class UmlWrapper {
 				Package p = (Package) elem;
 				out.addAll(getAllClassesAndModels(p));
 			} else if (elem instanceof Stereotype) {
-				Global.log("???????????" + elem.getClass().getName());
+				//Global.log("???????????" + elem.getClass().getName());
 			} else if (elem instanceof Class_) {
 				Class_ c = (Class_) elem;
 				out.add(c);
 			} else {
-				Global.log("???????????" + elem.getClass().getName());
+				//Global.log("???????????" + elem.getClass().getName());
 			}
 		}
 		return out;
@@ -202,8 +192,12 @@ public class UmlWrapper {
 		}
 		out += operation.getName();
 		out += "(";
+		boolean first = true;
 		for (Parameter p : getNonReturnParameters(operation)) {
-			out += p.getType().getName() + " " + p.getName() + ", ";
+			if (!first)
+				out += ", ";
+			first = false;
+			out += p.getType().getName() + " " + p.getName();
 		}
 		out += ")";
 		return out;
@@ -217,8 +211,12 @@ public class UmlWrapper {
 		}
 		out += activity.getName();
 		out += "(";
+		boolean first = true;
 		for (Parameter p : getNonReturnParameters(activity)) {
-			out += p.getType().getName() + " " + p.getName() + ", ";
+			if (!first)
+				out += ", ";
+			first = false;
+			out += p.getType().getName() + " " + p.getName();
 		}
 		out += ")";
 		return out;
@@ -227,10 +225,10 @@ public class UmlWrapper {
 	public static void printBehavior(Behavior behavior) {
 		if (behavior instanceof Activity) {
 			Activity a = (Activity) behavior;
-			System.out.println("Activity: " + a.getName());
+			Global.log("Activity: " + a.getName());
 
 			for (StructuredActivityNode n : a.getStructuredNode()) {
-				System.out.println("Action: " + n.getName());
+				Global.log("Action: " + n.getName());
 				printAction(n);
 			}
 		}
@@ -241,7 +239,7 @@ public class UmlWrapper {
 			if (a instanceof StructuredActivityNode) {
 				printAction((StructuredActivityNode) a);
 			} else {
-				System.out.println("Activity node: " + a.getName() + " - " + a);
+				Global.log("Activity node: " + a.getName() + " - " + a);
 			}
 		}
 	}

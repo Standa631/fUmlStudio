@@ -12,7 +12,7 @@ public class ClassConnectorValidator implements GConnectorValidator {
         if (source == null || target == null) {
             return false;
         } else if (source.equals(target)) {
-            return false;
+            //return false;
         }
 
         return true;
@@ -24,9 +24,9 @@ public class ClassConnectorValidator implements GConnectorValidator {
         if (source.getType() == null || target.getType() == null) {
             return false;
         } else if (source.getParent().equals(target.getParent())) {
-            return false;
+            //return false;
         } else if (source.getType().equals(target.getType())) {
-            return false;
+            //return false;
         } /*else if (source.getType().equals(TreeSkinConstants.TREE_INPUT_CONNECTOR)
                 && !source.getConnections().isEmpty()) {
             return false;
@@ -40,7 +40,7 @@ public class ClassConnectorValidator implements GConnectorValidator {
 
     @Override
     public String createConnectionType(final GConnector source, final GConnector target) {
-        return Constants.TITLED_INPUT_CONNECTOR;
+    	return Constants.CLASS_GENERALIZATION_CONNECTION;
     }
 
     @Override

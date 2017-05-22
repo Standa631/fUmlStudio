@@ -8,7 +8,6 @@ import org.apache.commons.io.FileUtils;
 import javafx.scene.Node;
 import net.belehradek.AwesomeIcon;
 import net.belehradek.Lib;
-import net.belehradek.fuml.core.XmiModelSaver;
 
 public class ProjectElementFuml extends ProjectElementText  {
 	
@@ -62,18 +61,18 @@ public class ProjectElementFuml extends ProjectElementText  {
 
 //	@Override
 //	public void save() {
-//		System.out.println("Save .graph file: " + projectElementFuml.getGraphicFile().getAbsolutePath());
+//		Global.log("Save .graph file: " + projectElementFuml.getGraphicFile().getAbsolutePath());
 //		graphEditorPersistence.saveModel(projectElementFuml.getGraphicFile(), graphEditor.getModel());
-//		System.out.println("Saved");
+//		Global.log("Saved");
 //		
 //		String path = Lib.toFilePath(projectElement.getFile().getParent());
-//		System.out.println("Save .xmi file: " + path + "/" + projectElement.getFile().getName());
+//		Global.log("Save .xmi file: " + path + "/" + projectElement.getFile().getName());
 //		XmiModelSaver saver = new XmiModelSaver();
 //		try {
 //			saver.saveModel(path, projectElement.getFile().getName(), model);
-//			System.out.println("Saved");
+//			Global.log("Saved");
 //		} catch (IOException e) {
-//			System.out.println("Not saved!");
+//			Global.log("Not saved!");
 //			e.printStackTrace();
 //		}
 //	}

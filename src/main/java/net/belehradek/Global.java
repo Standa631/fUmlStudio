@@ -7,18 +7,17 @@ import org.modeldriven.alf.uml.NamedElement;
 import org.modeldriven.alf.uml.Package;
 import org.modeldriven.alf.uml.Class_;
 
-import net.belehradek.fuml.core.UmlFrameworkWrapper;
-import net.belehradek.fuml.core.UmlWrapper;
-
 public class Global {
 	
 	protected static PrintStream loggerStream = null;
 	
+	protected static String logPrefix = "";
+	
 	public static void log(String text) {
-		System.out.println("Log: " + text);
+		System.out.println(logPrefix + text);
 		
 		if (loggerStream != null) {
-			loggerStream.println("Log: " + text);
+			loggerStream.println(logPrefix + text);
 		}
 	}
 	
@@ -33,22 +32,6 @@ public class Global {
 	
 	public static void log(NamedElement e) {
 		log(e.getClass().getName() + ": " + e.getName());
-	}
-	
-	public static void logRecursive(Package pack, boolean library) {
-//		if (!library && UmlWrapper.isLibrary(pack)) return;
-//		log(pack.getClass().getName() + ": " + pack.getQualifiedName());
-//		for (NamedElement e : pack.getOwnedMember()) {
-//			if (!UmlWrapper.isLibrary(e))
-//				log(e.getClass().getName() + ": " + e.getQualifiedName());
-//			if (e instanceof Package) {
-//				logRecursive((Package)e, library);
-//			}
-//		}
-		
-		for (Class_ c : UmlFrameworkWrapper.getAllClasses(pack, library)) {
-			log(c);
-		}
 	}
 	
 	public static PrintStream getLoggerStream() {

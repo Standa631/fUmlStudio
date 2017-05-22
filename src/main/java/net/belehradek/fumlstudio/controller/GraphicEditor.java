@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.emf.common.command.CompoundCommand;
+import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
@@ -21,6 +22,8 @@ import de.tesis.dynaware.grapheditor.GraphEditorContainer;
 import de.tesis.dynaware.grapheditor.core.DefaultGraphEditor;
 import de.tesis.dynaware.grapheditor.core.connections.ConnectionCommands;
 import de.tesis.dynaware.grapheditor.core.connections.DefaultConnectorValidator;
+import de.tesis.dynaware.grapheditor.core.skins.defaults.DefaultConnectionSkin;
+import de.tesis.dynaware.grapheditor.core.skins.defaults.connection.SimpleConnectionSkin;
 import de.tesis.dynaware.grapheditor.model.GConnection;
 import de.tesis.dynaware.grapheditor.model.GConnector;
 import de.tesis.dynaware.grapheditor.model.GJoint;
@@ -28,16 +31,20 @@ import de.tesis.dynaware.grapheditor.model.GModel;
 import de.tesis.dynaware.grapheditor.model.GNode;
 import de.tesis.dynaware.grapheditor.model.GraphFactory;
 import de.tesis.dynaware.grapheditor.window.WindowPosition;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.transform.Scale;
+import net.belehradek.Global;
 import net.belehradek.Lib;
 import net.belehradek.fumlstudio.project.IProjectElement;
 import net.belehradek.umleditor.Constants;
+import net.belehradek.umleditor.classdiagram.AssociationConnectionSkin;
+import net.belehradek.umleditor.classdiagram.ClassConnectorValidator;
 import net.belehradek.umleditor.classdiagram.ClassNodeSkin;
+import net.belehradek.umleditor.classdiagram.GeneralizationConnectionSkin;
 import net.belehradek.umleditor.classdiagram.PackageNodeSkin;
-import net.belehradek.umleditor.classdiagram.Test2ConnectionSkin;
-import net.belehradek.umleditor.classdiagram.TestConnectionSkin;
 import net.belehradek.umleditor.classdiagram.TitledConnectorSkin;
 import net.belehradek.umleditor.classdiagram.TitledTailSkin;
 
@@ -64,23 +71,36 @@ public class GraphicEditor extends ProjectElementEditor {
 		graphEditor.getView().getTransforms().add(scaleTransform);
 
 		setSkins();
+		
+		graphEditor.modelProperty().addListener(new ChangeListener<GModel>() {
+			@Override
+			public void changed(ObservableValue<? extends GModel> observable, GModel oldValue, GModel newValue) {
+				
+			}
+		});
 
 		// TEST: zobrazit minimapu, super pro ladeni
 		graphEditorContainer.getMinimap().setVisible(true);
 	}
 
 	protected void setSkins() {
+		graphEditor.setConnectorValidator(new ClassConnectorValidator());
+		
 		graphEditor.setNodeSkin(Constants.CLASS_NODE, ClassNodeSkin.class);
 		graphEditor.setNodeSkin(Constants.PACKAGE_NODE, PackageNodeSkin.class);
 		
-		graphEditor.setConnectorSkin(Constants.TITLED_INPUT_CONNECTOR, TitledConnectorSkin.class);
-		graphEditor.setConnectorSkin(Constants.TITLED_OUTPUT_CONNECTOR, TitledConnectorSkin.class);
+		graphEditor.setConnectorSkin(Constants.LEFT_CONNECTOR, TitledConnectorSkin.class);
+		graphEditor.setConnectorSkin(Constants.RIGHT_CONNECTOR, TitledConnectorSkin.class);
+		graphEditor.setConnectorSkin(Constants.TOP_CONNECTOR, TitledConnectorSkin.class);
+		graphEditor.setConnectorSkin(Constants.BOTTOM_CONNECTOR, TitledConnectorSkin.class);
 		
-		graphEditor.setConnectionSkin(Constants.TEST_CONNECTION, TestConnectionSkin.class);
-		graphEditor.setConnectionSkin(Constants.TEST2_CONNECTION, Test2ConnectionSkin.class);
+		graphEditor.setConnectionSkin(Constants.CLASS_ASSOCIATION_CONNECTION, AssociationConnectionSkin.class);
+		graphEditor.setConnectionSkin(Constants.CLASS_GENERALIZATION_CONNECTION, GeneralizationConnectionSkin.class);
 		
-		graphEditor.setTailSkin(Constants.TITLED_INPUT_CONNECTOR, TitledTailSkin.class);
-		graphEditor.setTailSkin(Constants.TITLED_OUTPUT_CONNECTOR, TitledTailSkin.class);
+		graphEditor.setTailSkin(Constants.LEFT_CONNECTOR, TitledTailSkin.class);
+		graphEditor.setTailSkin(Constants.RIGHT_CONNECTOR, TitledTailSkin.class);
+		graphEditor.setTailSkin(Constants.TOP_CONNECTOR, TitledTailSkin.class);
+		graphEditor.setTailSkin(Constants.BOTTOM_CONNECTOR, TitledTailSkin.class);
 	}
 
 	@Override
@@ -90,7 +110,7 @@ public class GraphicEditor extends ProjectElementEditor {
 
 	@Override
 	public void load() {
-		System.out.println("Load .graph file: " + projectElement.getFile().getAbsolutePath());
+		Global.log("Load .graph file: " + projectElement.getFile().getAbsolutePath());
 		loadModel(projectElement.getFile(), graphEditor);
 		graphEditorContainer.panTo(WindowPosition.CENTER);
 	}
@@ -118,7 +138,7 @@ public class GraphicEditor extends ProjectElementEditor {
 
 	@Override
 	public void save() {
-		System.out.println("Save .graph file: " + projectElement.getFile().getAbsolutePath());
+		Global.log("Save .graph file: " + projectElement.getFile().getAbsolutePath());
 		saveModel(projectElement.getFile(), graphEditor.getModel());
 	}
 
@@ -152,7 +172,7 @@ public class GraphicEditor extends ProjectElementEditor {
 	public void saveModel(final File file, final GModel model) {
 		if (file.exists()) {
 			boolean ret = file.delete();
-			System.out.println("Delete file: " + ret);
+			Global.log("Delete file: " + ret);
 		}
 
 		final EditingDomain editingDomain = AdapterFactoryEditingDomain.getEditingDomainFor(model);
@@ -184,25 +204,24 @@ public class GraphicEditor extends ProjectElementEditor {
 		node.setType(nodeType);
 		node.setId(id);
 
-		final GConnector input = GraphFactory.eINSTANCE.createGConnector();
-		node.getConnectors().add(input);
-		input.setType(Constants.TITLED_INPUT_CONNECTOR);
-//		input.setId(node.getId() + "::" + node.getConnectors().size());
-
-		final GConnector output = GraphFactory.eINSTANCE.createGConnector();
-		node.getConnectors().add(output);
-		output.setType(Constants.TITLED_OUTPUT_CONNECTOR);
-//		output.setId(node.getId() + "::" + node.getConnectors().size());
-
-		System.out.println("Add " + nodeType + ":" + id + " node: [" + node.getX() + "," + node.getY() + "]");
+		Global.log("Add " + nodeType + ":" + id + " node: [" + node.getX() + "," + node.getY() + "]");
 
 		Commands.addNode(graphEditor.getModel(), node);
 
 		return node;
 	}
 	
+	protected GConnector addConnector(GNode node, String skin) {
+		final GConnector connector = GraphFactory.eINSTANCE.createGConnector();
+		connector.setType(skin);
+		node.getConnectors().add(connector);
+		return connector;
+	}
+	
 	protected Point2D getConnectorPosition(GConnector connector) {
 		GConnectorSkin connectorSkin = (GConnectorSkin) graphEditor.getSkinLookup().lookupConnector(connector);
+		
+		if (connectorSkin == null || connectorSkin.getRoot() == null) return null;
 		
         final Node connectorRoot = connectorSkin.getRoot().getParent();
 
@@ -212,16 +231,27 @@ public class GraphicEditor extends ProjectElementEditor {
         return new Point2D(x, y);
 	}
 	
-	protected GConnection addConnection(GConnector source, GConnector target) {
+	protected GConnection addGeneralizationConnection(GConnector source, GConnector target) {
+		return addConnection(source, target, Constants.CLASS_GENERALIZATION_CONNECTION);
+	}
+	
+	protected GConnection addAssoctioationConnection(GConnector source, GConnector target) {
+		return addConnection(source, target, Constants.CLASS_ASSOCIATION_CONNECTION);
+	}
+	
+	protected GConnection addConnection(GConnector source, GConnector target, String style) {
 		GModel model = graphEditor.getModel();
 		GConnectorValidator validator = new DefaultConnectorValidator();
 		
-        String connectionType = validator.createConnectionType(source, target);
-        connectionType = Constants.TEST2_CONNECTION;
+//        String connectionType = validator.createConnectionType(source, target);
+        String connectionType = style;
         String jointType = validator.createJointType(source, target);
         
         Point2D sourcePos = getConnectorPosition(source);
         Point2D targetPos = getConnectorPosition(target);
+        
+        if (sourcePos == null || targetPos == null)
+        	return null;
 
         List<Point2D> jointPositions = new ArrayList<>();
         Double avg = (sourcePos.getX() + targetPos.getX()) / 2;
@@ -245,4 +275,34 @@ public class GraphicEditor extends ProjectElementEditor {
         
         return addedConnection;
     }
+	
+	public GConnector findBestConnector(GNode node) {
+		int min = Integer.MAX_VALUE;
+		GConnector out = null;
+		for (GConnector c : node.getConnectors()) {
+			if (c.getConnections().size() == 0)
+				return c;
+			if (c.getConnections().size() < min) {
+				min = c.getConnections().size();
+				out = c;
+			}
+		}
+		return out;
+	}
+	
+	public GConnector findBestConnector(GNode node, GConnector not) {
+		int min = Integer.MAX_VALUE;
+		GConnector out = null;
+		for (GConnector c : node.getConnectors()) {
+			if (not == c)
+				continue;
+			if (c.getConnections().size() == 0)
+				return c;
+			if (c.getConnections().size() < min) {
+				min = c.getConnections().size();
+				out = c;
+			}
+		}
+		return out;
+	}
 }

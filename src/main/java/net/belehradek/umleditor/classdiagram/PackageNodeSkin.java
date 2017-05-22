@@ -80,8 +80,8 @@ public class PackageNodeSkin extends GNodeSkinFix {
         if (connectorSkins != null) {
             for (final GConnectorSkin connectorSkin : connectorSkins) {
 
-                final boolean isInput = connectorSkin.getConnector().getType().contains("input");
-                final boolean isOutput = connectorSkin.getConnector().getType().contains("output");
+                final boolean isInput = connectorSkin.getConnector().getType().contains("left");
+                final boolean isOutput = connectorSkin.getConnector().getType().contains("right");
 
                 if (isInput) {
                     inputConnectorSkins.add(connectorSkin);

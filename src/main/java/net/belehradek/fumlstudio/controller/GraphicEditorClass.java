@@ -14,15 +14,18 @@ import org.modeldriven.alf.uml.Property;
 
 import de.tesis.dynaware.grapheditor.Commands;
 import de.tesis.dynaware.grapheditor.model.GConnection;
+import de.tesis.dynaware.grapheditor.model.GConnector;
 import de.tesis.dynaware.grapheditor.model.GNode;
 import de.tesis.dynaware.grapheditor.window.WindowPosition;
 import javafx.application.Platform;
-import net.belehradek.fuml.core.MyAlfMyMapping;
+import net.belehradek.Global;
+import net.belehradek.fuml.core.MyAlfMapping;
 import net.belehradek.fuml.core.UmlFrameworkWrapper;
 import net.belehradek.fuml.core.UmlWrapper;
 import net.belehradek.fumlstudio.project.IProjectElement;
 import net.belehradek.fumlstudio.project.ProjectElementActivities;
 import net.belehradek.fumlstudio.project.ProjectElementFuml;
+import net.belehradek.fumlstudio.project.fUmlProject;
 import net.belehradek.umleditor.Constants;
 import net.belehradek.umleditor.classdiagram.ClassNodeSkin;
 import net.belehradek.umleditor.classdiagram.PackageNodeSkin;
@@ -41,7 +44,7 @@ public class GraphicEditorClass extends GraphicEditor {
 	@Override
 	public void load() {
 		File graphFile = projectElementFuml.getGraphicFile();
-		System.out.println("Load file graph: " + graphFile.getAbsolutePath());
+		Global.log("Load file graph: " + graphFile.getAbsolutePath());
 
 		loadModel(graphFile, graphEditor);
 		loadContent();
@@ -52,9 +55,8 @@ public class GraphicEditorClass extends GraphicEditor {
 	private List<GNode> notUsed;
 
 	protected void loadContent() {
-		System.out.println("Load file xmi: " + projectElement.getFile().getAbsolutePath());
-		MyAlfMyMapping alf = new MyAlfMyMapping();
-		model = alf.getModel("App");
+		Global.log("Load file xmi: " + projectElement.getFile().getAbsolutePath());
+		model = ((fUmlProject) projectElementFuml.getProject()).loadModel();
 
 		Platform.runLater(new Runnable() {
 			@Override
@@ -78,6 +80,12 @@ public class GraphicEditorClass extends GraphicEditor {
 		for (Package p : UmlFrameworkWrapper.getAllPackages(model, false)) {
 			mapPackage(p);
 		}
+		
+		for (Class_ c : UmlFrameworkWrapper.getAllClasses(model, false)) {
+			for (Class_ sc : c.getSuperClass()) {
+				mapInheritance(c, sc);
+			}
+		}
 	}
 
 	public void mapPackage(Package pack) {
@@ -93,15 +101,30 @@ public class GraphicEditorClass extends GraphicEditor {
 		ClassNodeSkin skin = (ClassNodeSkin) graphEditor.getSkinLookup().lookupNode(node);
 		skin.setName(class_.getName());
 
-		for (Property p : class_.getAttribute()) {
+		int connectorCount = 0;
+		
+		for (Property p : UmlFrameworkWrapper.getAttributesNoDefault(class_)) {
 			mapAttribute(skin, p);
+			connectorCount++;
 		}
-		for (Operation o : UmlWrapper.getOperations(class_)) {
+		for (Operation o : UmlFrameworkWrapper.getOperationsNoDefault(class_)) {
 			mapOperation(skin, o);
+			connectorCount++;
 		}
-		for (Activity a : UmlWrapper.getActivities(class_)) {
+		for (Activity a : UmlFrameworkWrapper.getActivitiesNoDefault(class_)) {
 			mapActivity(skin, a);
+			connectorCount++;
 		}
+		
+		if (connectorCount < 4) connectorCount = 4;
+		connectorCount = connectorCount - node.getConnectors().size();
+		for (int i = 0; i < connectorCount; i++) {
+			addConnector(node, Constants.RIGHT_CONNECTOR);
+			addConnector(node, Constants.LEFT_CONNECTOR);
+		}
+		
+		//addConnector(node, Constants.TOP_CONNECTOR);
+		//addConnector(node, Constants.BOTTOM_CONNECTOR);
 		
 		notUsed.remove(node);
 	}
@@ -116,6 +139,22 @@ public class GraphicEditorClass extends GraphicEditor {
 
 	protected void mapActivity(ClassNodeSkin skin, Activity a) {
 		skin.addOperation(UmlWrapper.getActivityString(a));
+	}
+	
+	protected void mapInheritance(Class_ class_, Class_ super_) {
+		GNode sourceNode = fingNode(class_.getQualifiedName());
+		if (sourceNode == null) return;
+		GConnector sourceConnector = findBestConnector(sourceNode);
+		
+		GNode targetNode = fingNode(super_.getQualifiedName());
+		if (targetNode == null) return;
+		GConnector targetConnector = findBestConnector(targetNode, sourceConnector);
+		
+		String id = sourceNode.getId() + "->" + targetNode.getId();			
+		if (findConnection(id) == null) {
+			GConnection con = addGeneralizationConnection(sourceConnector, targetConnector);
+			con.setId(id);
+		}
 	}
 
 	@Override
@@ -141,7 +180,7 @@ public class GraphicEditorClass extends GraphicEditor {
 
 	@Override
 	public void save() {
-		System.out.println("Save .graph file: " + projectElementFuml.getGraphicFile().getAbsolutePath());
+		Global.log("Save .graph file: " + projectElementFuml.getGraphicFile().getAbsolutePath());
 		saveModel(projectElementFuml.getGraphicFile(), graphEditor.getModel());
 	}
 }

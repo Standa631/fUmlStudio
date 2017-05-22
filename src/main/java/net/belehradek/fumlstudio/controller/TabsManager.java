@@ -11,7 +11,8 @@ import javafx.event.EventHandler;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TreeItem;
-import net.belehradek.fumlstudio.event.EventProjectElementSelected;
+import net.belehradek.Global;
+import net.belehradek.fumlstudio.event.EventProjectElement;
 import net.belehradek.fumlstudio.event.EventRouter;
 import net.belehradek.fumlstudio.project.IProjectElement;
 import net.belehradek.fumlstudio.project.ProjectElementActivities;
@@ -19,6 +20,7 @@ import net.belehradek.fumlstudio.project.ProjectElementAlf;
 import net.belehradek.fumlstudio.project.ProjectElementFtl;
 import net.belehradek.fumlstudio.project.ProjectElementFuml;
 import net.belehradek.fumlstudio.project.ProjectElementGlobalGraph;
+import net.belehradek.fumlstudio.project.ProjectElementText;
 
 public class TabsManager extends TabPane {
 
@@ -36,8 +38,8 @@ public class TabsManager extends TabPane {
 				Object value = selectedTab.getUserData();
 				if (value instanceof IProjectElement) {
 					IProjectElement elem = (IProjectElement) value;
-					System.out.println("Selected Text : " + elem.getFile().getName());
-					EventRouter.sendEvent(TabsManager.this, new EventProjectElementSelected(elem));
+					Global.log("Selected Text : " + elem.getFile().getName());
+					EventRouter.sendEvent(TabsManager.this, new EventProjectElement(elem));
 				}
 			}
 		});
@@ -54,7 +56,7 @@ public class TabsManager extends TabPane {
 				@Override
 				public void handle(Event event) {					
 					Tab tab = (Tab) event.getSource();
-					System.out.println("Zavreni tabu: " + tab.getText());
+					Global.log("Zavreni tabu: " + tab.getText());
 					tabs.values().remove(tab);
 				}
 			});
@@ -80,8 +82,13 @@ public class TabsManager extends TabPane {
 				editor = new CodeEditor();
 				editor.setProjectElement(element);
 				tab.setContent(editor.getView());
+			} else if (element instanceof ProjectElementText) {
+				//editor = new TextEditor();
+				editor = new TextEditor();
+				editor.setProjectElement(element);
+				tab.setContent(editor.getView());
 			} else {
-				System.out.println("Neznamy typ souboru pri vytvareni tabu s editorem: " + element.getName());
+				Global.log("Neznamy typ souboru pri vytvareni tabu s editorem: " + element.getName());
 				return;
 			}
 			editor.load();
@@ -96,6 +103,14 @@ public class TabsManager extends TabPane {
 		IProjectElementEditor editor = getActiveEditor();
 		if (editor != null)
 			editor.save();
+	}
+	
+	public IProjectElement getActiveElement() {
+		Tab tab = getSelectionModel().getSelectedItem();
+		if (tab == null)
+			return null;
+		IProjectElementEditor editor = (IProjectElementEditor) tab.getUserData();
+		return editor.getProjectElement();
 	}
 	
 	public IProjectElementEditor getActiveEditor() {

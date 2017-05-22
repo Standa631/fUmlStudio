@@ -1,4 +1,5 @@
-package net.belehradek.fuml.codegeneration;
+package net.belehradek.fuml.core;
+
 
 import java.io.File;
 import java.io.FileWriter;
@@ -14,8 +15,6 @@ import freemarker.template.TemplateHashModel;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
 import freemarker.template.TemplateScalarModel;
-import net.belehradek.Global;
-import net.belehradek.NullWriter;
 
 public class TemplateEngine {
 	

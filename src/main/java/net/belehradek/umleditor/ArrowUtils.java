@@ -1,7 +1,6 @@
 package net.belehradek.umleditor;
 
 import javafx.geometry.Point2D;
-import de.tesis.dynaware.grapheditor.utils.Arrow;
 
 /**
  * Utils for drawing arrows. Used by connection and tail skins.

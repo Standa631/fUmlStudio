@@ -14,5 +14,7 @@ public interface IProjectElement {
 	
 	public String getName();
 	
+	public IProject getProject();
+	
 //	public void save();
 }

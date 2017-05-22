@@ -8,7 +8,7 @@ import net.belehradek.AwesomeIcon;
 public class ProjectElementGlobalGraph extends ProjectElementFuml {
 
 	public ProjectElementGlobalGraph(IProject project) {
-		super(project, new File("C:\\Users\\Bel2\\DIP\\fUmlTest\\src\\main\\alf\\App.alf"));
+		super(project, new File(project.getFile(), "src\\main\\alf\\App.alf"));
 	}
 	
 	@Override

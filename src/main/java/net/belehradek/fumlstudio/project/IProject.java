@@ -8,7 +8,7 @@ public interface IProject extends IProjectElementGroup {
 	
 	public void createNewProject(File folder);
 	
-	public void loadProject(File folder);
+	public boolean loadProject(File folder);
 	
 	public void generateCode();
 	

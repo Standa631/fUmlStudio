@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import javafx.scene.Node;
 import net.belehradek.AwesomeIcon;
+import net.belehradek.Global;
 
 public class ProjectElementText implements IProjectElement {
 
@@ -34,7 +35,8 @@ public class ProjectElementText implements IProjectElement {
 	protected void createFile() {
 		try {
 			if (!file.exists()) {
-				System.out.println("Create element: " + file.getAbsolutePath());
+				Global.log("Create element: " + file.getAbsolutePath());
+				file.getParentFile().mkdirs();
 				file.createNewFile();
 			}
 		} catch (IOException e) {
@@ -65,5 +67,10 @@ public class ProjectElementText implements IProjectElement {
 	@Override
 	public String getName() {
 		return file.getName();
+	}
+
+	@Override
+	public IProject getProject() {
+		return project;
 	}
 }

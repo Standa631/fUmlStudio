@@ -2,10 +2,18 @@ package net.belehradek.fumlstudio.project;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.rmi.activation.ActivationGroupDesc.CommandEnvironment;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.gradle.tooling.GradleConnector;
@@ -17,9 +25,10 @@ import freemarker.template.TemplateException;
 import javafx.scene.Node;
 import net.belehradek.AwesomeIcon;
 import net.belehradek.Global;
-import net.belehradek.fuml.codegeneration.TemplateEngine;
-import net.belehradek.fuml.codegeneration.TemplateEngineUml;
-import net.belehradek.fuml.core.MyAlfMyMapping;
+import net.belehradek.Lib;
+import net.belehradek.fuml.core.MyAlfMapping;
+import net.belehradek.fuml.core.TemplateEngine;
+import net.belehradek.fumlstudio.controller.ProjectElementFactory;
 
 public class fUmlProject implements IProject {
 
@@ -31,10 +40,7 @@ public class fUmlProject implements IProject {
 	protected GradleConnector gradle;
 	protected ProjectConnection gradleConnection;
 	
-	protected String mainUnitName = "App";
-	protected String rootNamespace = "net.belehradek.fumltest.fumltest";
-	protected String outPath = "out\\";
-	protected String activeTemplatePath = "src\\main\\ftl\\androidRoot.ftl";
+	protected final String modelPath = "src\\main\\alf";
 
 	public fUmlProject() {
 
@@ -73,16 +79,9 @@ public class fUmlProject implements IProject {
 		runGradleTask("init");
 
 		generateGradleFiles();
-
-		// vytvoreni dalsi struktury
-		// File(getClass().getResource("FumlProjectStructure/EmptySrc").getPath());
-		File sampleSrcDir = new File(getClass().getResource("FumlProjectStructure/SampleSrc").getPath());
-		try {
-			FileUtils.copyDirectory(sampleSrcDir, folder);
-			Global.log(sampleSrcDir.getAbsolutePath() + " -> " + folder.getAbsoluteFile());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		
+		runGradleTask("fUmlInstall");
+		runGradleTask("fUmlInit");
 	}
 
 	private void generateGradleFiles() {
@@ -109,11 +108,24 @@ public class fUmlProject implements IProject {
 	}
 
 	@Override
-	public void loadProject(File folder) {
+	public boolean loadProject(File folder) {
 		file = folder;
 		name = folder.getName();
+		
+		if (!isProjectFolder())
+			return false;
+		
 		initGradle();
 		loadElements();
+		return true;
+	}
+	
+	protected boolean isProjectFolder() {
+		File f = new File(file, "build.gradle");
+		if (!f.exists()) {
+			return false;
+		}
+		return true;
 	}
 
 	protected void initGradle() {
@@ -129,83 +141,85 @@ public class fUmlProject implements IProject {
 	protected void loadElements() {
 		projectElements.clear();
 
-		ProjectElementGroupDir alfGroup = loadElementsAlf();
-		ProjectElementGroupDir ftlGroup = loadElementsFtl();
-		ProjectElementGroupDir buildGroup = loadElementsBuild();
-		ProjectElementGroupDir outGroup = loadElementsOut();
-		ProjectElementGlobalGraph globalGraph = new ProjectElementGlobalGraph(this);
-		ProjectElementActivities activities = new ProjectElementActivities(this);
+		ProjectElementGroupDir alfGroup = loadProjectFilesTree("alf", "src/main/alf", new String[] {".alf"}, new ProjectElementFactory() {
+			@Override
+			public IProjectElement create(IProject project, File file) {
+				return new ProjectElementAlf(project, file);
+			}
+		}, false);
+		ProjectElementGroupDir ftlGroup = loadProjectFilesTree("ftl", "src/main/ftl", new String[] {".ftl"}, new ProjectElementFactory() {
+			@Override
+			public IProjectElement create(IProject project, File file) {
+				return new ProjectElementFtl(project, file);
+			}
+		}, false);
+//		ProjectElementGroupDir buildGroup = loadProjectFilesTree("build", "build", new String[] {".uml", ".fuml"}, new ProjectElementFactory() {
+//			@Override
+//			public IProjectElement create(IProject project, File file) {
+//				return new ProjectElementFuml(project, file);
+//			}
+//		}, false);
+		ProjectElementGroupDir outGroup = loadProjectFilesTree("out", "out", null, new ProjectElementFactory() {
+			@Override
+			public IProjectElement create(IProject project, File file) {
+				return new ProjectElementText(project, file);
+			}
+		}, false);
+		
+		File f = new File(file, "src\\main\\alf\\App.alf");
+		if (f.exists()) {
+			ProjectElementGlobalGraph globalGraph = new ProjectElementGlobalGraph(this);
+			ProjectElementActivities activities = new ProjectElementActivities(this);
+			addProjectElement(activities);
+			addProjectElement(globalGraph);
+		}
 
-		addProjectElement(activities);
-		addProjectElement(globalGraph);
 		addProjectElement(alfGroup);
 		addProjectElement(ftlGroup);
-		addProjectElement(buildGroup);
+//		addProjectElement(buildGroup);
 		addProjectElement(outGroup);
 	}
 
-	protected ProjectElementGroupDir loadElementsOut() {
-		// out folder
-		File out = new File(file, "out");
-		ProjectElementGroupDir outGroup = new ProjectElementGroupDir(out);
-		for (Object fileObj : FileUtils.listFiles(out, null, true)) {
-			if (fileObj instanceof File) {
-				File file = (File) fileObj;
-				if (file.getName().endsWith(".java")) {
-					outGroup.addProjectElement(new ProjectElementAlf(this, file));
-				} else {
-//					Global.log("Neznamy typ souboru pri parsovani projektu: " + file.getAbsolutePath());
+	protected ProjectElementGroupDir loadProjectFilesTree(String name, String src, String[] ext, ProjectElementFactory factory, boolean flat) {
+		File alf = new File(file, src);
+		if (!alf.exists()) return null;
+			
+		ProjectElementGroupDir alfGroup = new ProjectElementGroupDirName(alf, name);
+		
+		if (flat) {
+			for (Object fileObj : FileUtils.listFiles(alf, null, true)) {
+				if (fileObj instanceof File) {
+					File file = (File) fileObj;
+					if (ext == null || Lib.endsWith(file.getName(), ext)) {
+						alfGroup.addProjectElement(factory.create(this, file));
+					}
 				}
 			}
+		} else {			
+			loadProjectFilesTree(alfGroup, alf, ext, factory);
 		}
-		return outGroup;
-	}
-
-	protected ProjectElementGroupDir loadElementsBuild() {
-		// build folder
-		File build = new File(file, "build");
-		ProjectElementGroupDir buildGroup = new ProjectElementGroupDir(build);
-		for (Object fileObj : FileUtils.listFiles(build, null, true)) {
-			if (fileObj instanceof File) {
-				File file = (File) fileObj;
-				if (file.getName().endsWith(".uml") || file.getName().endsWith(".fuml")) {
-					buildGroup.addProjectElement(new ProjectElementFuml(this, file));
-				} else {
-//					Global.log("Neznamy typ souboru pri parsovani projektu: " + file.getAbsolutePath());
-				}
-			}
-		}
-		return buildGroup;
-	}
-
-	protected ProjectElementGroupDir loadElementsFtl() {
-		// ftl folder
-		File ftl = new File(file, "src");
-		ProjectElementGroupDir ftlGroup = new ProjectElementGroupDirName(ftl, "ftl");
-		for (Object fileObj : FileUtils.listFiles(ftl, null, true)) {
-			if (fileObj instanceof File) {
-				File file = (File) fileObj;
-				if (file.getName().endsWith(".ftl")) {
-					ftlGroup.addProjectElement(new ProjectElementFtl(this, file));
-				}
-			}
-		}
-		return ftlGroup;
-	}
-
-	protected ProjectElementGroupDir loadElementsAlf() {
-		// alf folder
-		File alf = new File(file, "src");
-		ProjectElementGroupDir alfGroup = new ProjectElementGroupDirName(alf, "alf");
-		for (Object fileObj : FileUtils.listFiles(alf, null, true)) {
-			if (fileObj instanceof File) {
-				File file = (File) fileObj;
-				if (file.getName().endsWith(".alf")) {
-					alfGroup.addProjectElement(new ProjectElementAlf(this, file));
-				}
-			}
-		}
+		
 		return alfGroup;
+	}
+	
+	protected void loadProjectFilesTree(ProjectElementGroupDir target, File folder, String[] ext, ProjectElementFactory factory) {
+		if (folder == null || !folder.isDirectory())
+			return;
+		
+		for (File f : folder.listFiles()) { 
+			if (f.isDirectory()) {
+				ProjectElementGroupDir pi = new ProjectElementGroupDirName(f, f.getName());
+				target.addProjectElement(pi);
+				loadProjectFilesTree(pi, f, ext, factory);
+			} else if (ext == null || Lib.endsWith(f.getName(), ext)) {
+				target.addProjectElement(factory.create(this, f));
+			}
+		}
+	}
+	
+	public Package loadModel() {
+		MyAlfMapping alf = new MyAlfMapping(file.getAbsolutePath() + "\\" + modelPath, file.getAbsolutePath() + "\\" + getGradleSettingsLibPath());
+		return alf.getModel(getGradleSettingsUnitName());
 	}
 
 	@Override
@@ -216,39 +230,92 @@ public class fUmlProject implements IProject {
 	@Override
 	public void build() {
 		Global.log("Project build");
-		runGradleTask("compileAlf");
+		runGradleTask("fUmlCompile");
 	}
 
 	@Override
 	public void debug() {
 		Global.log("Project debug");
-		runGradleTask("runFuml");
+		runGradleTask("fUmlRunAlf");
 	}
 
 	@Override
 	public void run() {
 		Global.log("Project run");
-		runGradleTask("runFuml");
+		runGradleTask("fUmlRun");
 	}
 	
 	@Override
 	public void generateCode() {
-		MyAlfMyMapping alf = new MyAlfMyMapping();
-		Package pack = alf.getModel(mainUnitName);
-		
-		if (pack != null) {
-			Global.log(pack);
+		Global.log("Generate code");
+		runGradleTask("fUmlCodeGenerate");
+	}
+	
+	public String getGradleSettingsProperty(String name) {
+		String out = "";
+		try {
+			File f = new File(file, "settings.gradle");
+			String s = new String(Files.readAllBytes(f.toPath()));
+			s = s.substring(s.indexOf(name) + name.length());
 			
-			TemplateEngineUml engine = new TemplateEngineUml(new File(file, outPath));
-			try {
-				engine.setTemplate(new File(file, activeTemplatePath));
-				engine.processPackage(pack, rootNamespace);
-			} catch (IOException e) {
-				e.printStackTrace();
-			} catch (TemplateException e) {
-				e.printStackTrace();
+			Pattern pattern = Pattern.compile("[\\s=]*['\"]([^'\"]*)");
+			Matcher matcher = pattern.matcher(s);
+			if (matcher.find())
+			{
+			    out = matcher.group(1);
 			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+		return out;
+	}
+	
+	public void setGradleSettingsProperty(String name, String value) {
+		String out = "";
+		try {
+			File f = new File(file, "settings.gradle");
+			String s = new String(Files.readAllBytes(f.toPath()));
+			
+			Pattern pattern = Pattern.compile("(" + name + "[\\s=]*['\"])([^'\"]*)");
+			Matcher matcher = pattern.matcher(s);
+			if (matcher.find())
+			{
+				s = matcher.replaceFirst("$1" + value);
+			}
+			
+			FileUtils.writeStringToFile(f, s);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public String getGradleSettingsUnitName() {
+		return getGradleSettingsProperty("gradle.ext.FumlSettingsUnitName");
+	}
+	
+	public void setGradleSettingsUnitName(String unit) {
+		setGradleSettingsProperty("gradle.ext.FumlSettingsUnitName", unit);
+	}
+	
+	public String getGradleSettingsTransform() {
+		return getGradleSettingsProperty("gradle.ext.FumlSettingsTransformationFile");
+	}
+	
+	public void setGradleSettingsTransform(String trans) {
+		setGradleSettingsProperty("gradle.ext.FumlSettingsTransformationFile", trans);
+	}
+	
+	public String getGradleSettingsNamespace() {
+		return getGradleSettingsProperty("gradle.ext.FumlSettingsNamespacePrefix");
+	}
+	
+	public void setGradleSettingsNamespace(String trans) {
+		setGradleSettingsProperty("gradle.ext.FumlSettingsNamespacePrefix", trans);
+	}
+	
+	public String getGradleSettingsLibPath() {
+		return getGradleSettingsProperty("gradle.ext.FumlSettingsLibPath");
 	}
 
 	@Override
@@ -274,6 +341,11 @@ public class fUmlProject implements IProject {
 	@Override
 	public void clean() {
 		Global.log("Project clean");
-		runGradleTask("cleanAll");
+		runGradleTask("fUmlClean");
+	}
+
+	@Override
+	public IProject getProject() {
+		return this;
 	}
 }

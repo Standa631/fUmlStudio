@@ -7,6 +7,8 @@ import org.eclipse.fx.code.editor.fx.TextEditor;
 import org.eclipse.fx.code.editor.services.InputDocument;
 import org.eclipse.fx.core.event.EventBus;
 import org.eclipse.fx.core.event.SimpleEventBus;
+import org.eclipse.jface.text.DocumentEvent;
+import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.jface.text.source.SourceViewer;
 import org.eclipse.fx.code.editor.SourceFileInput;
 import org.eclipse.fx.code.editor.LocalSourceFileInput;
@@ -21,20 +23,26 @@ import java.util.function.Consumer;
 
 import net.belehradek.fumlstudio.project.IProjectElement;
 
-public class CodeEditor extends SourceViewer implements IProjectElementEditor {
+public class CodeEditor extends ProjectElementEditor {
 
+	protected SourceViewer viewer;
 	protected IProjectElement projectElement;
 	protected EventBus eventBus = new SimpleEventBus();
 	
 	public CodeEditor() {
 		super();
-		
-		//eventBus.publish(event, synchronous);
+
+		viewer = new SourceViewer();
 	}
 	
 	@Override
 	public void setProjectElement(IProjectElement projectElement) {
 		this.projectElement = projectElement;
+	}
+	
+	@Override
+	public IProjectElement getProjectElement() {
+		return projectElement;
 	}
 
 	@Override
@@ -44,13 +52,13 @@ public class CodeEditor extends SourceViewer implements IProjectElementEditor {
 
 	@Override
 	public Node getView() {
-		return this;
+		return viewer;
 	}
 
 	@Override
 	public void save() {
 		try (PrintWriter out = new PrintWriter(projectElement.getFile())){
-			String text = getDocument().get();
+			String text = viewer.getDocument().get();
 		    out.print(text);
 		    out.close();
 		} catch (Exception e) {
@@ -61,6 +69,18 @@ public class CodeEditor extends SourceViewer implements IProjectElementEditor {
 	@Override
 	public void load() {
         Path path = Paths.get(projectElement.getFile().getPath());
-		setDocument(new InputDocument(new LocalSourceFileInput(path, eventBus)));
+        viewer.setDocument(new InputDocument(new LocalSourceFileInput(path, eventBus)));
+        
+        viewer.getDocument().addDocumentListener(new IDocumentListener() {
+			@Override
+			public void documentChanged(DocumentEvent event) {
+				// TODO Auto-generated method stub
+			}
+			
+			@Override
+			public void documentAboutToBeChanged(DocumentEvent event) {
+
+			}
+		});
 	}
 }

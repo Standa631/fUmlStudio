@@ -16,6 +16,10 @@ public abstract class ProjectElementEditor implements IProjectElementEditor {
 	public void setProjectElement(IProjectElement projectElement) {
 		this.projectElement = projectElement;
 	}
+	
+	public IProjectElement getProjectElement() {
+		return projectElement;
+	}
 
 	public abstract void load();
 
