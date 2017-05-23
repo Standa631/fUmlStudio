@@ -16,4 +16,4 @@ include 'api'
 include 'services:webservice'
 */
 
-rootProject.name = 'fUml-Studio'
+rootProject.name = 'fUmlStudio'

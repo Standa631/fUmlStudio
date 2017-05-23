@@ -22,6 +22,8 @@ import net.belehradek.Global;
 import net.belehradek.fuml.core.MyAlfMapping;
 import net.belehradek.fuml.core.UmlFrameworkWrapper;
 import net.belehradek.fuml.core.UmlWrapper;
+import net.belehradek.fumlstudio.IdeWorker;
+import net.belehradek.fumlstudio.IdeWorkerTask;
 import net.belehradek.fumlstudio.project.IProjectElement;
 import net.belehradek.fumlstudio.project.ProjectElementActivities;
 import net.belehradek.fumlstudio.project.ProjectElementFuml;
@@ -56,31 +58,36 @@ public class GraphicEditorClass extends GraphicEditor {
 
 	protected void loadContent() {
 		Global.log("Load file xmi: " + projectElement.getFile().getAbsolutePath());
-		model = ((fUmlProject) projectElementFuml.getProject()).loadModel();
-
-		Platform.runLater(new Runnable() {
+		
+		IdeWorker.getInstance().addTask(new IdeWorkerTask("Loading diagram...") {
 			@Override
-			public void run() {
-				notUsed = new ArrayList<>(graphEditor.getModel().getNodes());
-				
-				mapModel(model);
-				
-				for (GNode n : notUsed) {
-					Commands.removeNode(graphEditor.getModel(), n);
-				}
+			public void work() {
+				model = ((fUmlProject) projectElementFuml.getProject()).loadModel();
+				Platform.runLater(new Runnable() {
+					@Override
+					public void run() {
+						notUsed = new ArrayList<>(graphEditor.getModel().getNodes());
+
+						mapModel(model);
+
+						for (GNode n : notUsed) {
+							Commands.removeNode(graphEditor.getModel(), n);
+						}
+					}
+				});
 			}
 		});
 	}
-	
+
 	public void mapModel(Package model) {
 		for (Class_ c : UmlFrameworkWrapper.getAllClasses(model, false)) {
 			mapClass(c);
 		}
-		
+
 		for (Package p : UmlFrameworkWrapper.getAllPackages(model, false)) {
 			mapPackage(p);
 		}
-		
+
 		for (Class_ c : UmlFrameworkWrapper.getAllClasses(model, false)) {
 			for (Class_ sc : c.getSuperClass()) {
 				mapInheritance(c, sc);
@@ -89,11 +96,13 @@ public class GraphicEditorClass extends GraphicEditor {
 	}
 
 	public void mapPackage(Package pack) {
-		GNode node = getOrAddNode(pack.getQualifiedName(), Constants.PACKAGE_NODE);
-		PackageNodeSkin skin = (PackageNodeSkin) graphEditor.getSkinLookup().lookupNode(node);
-		skin.setName(pack.getName());
-
-		notUsed.remove(node);
+		// GNode node = getOrAddNode(pack.getQualifiedName(),
+		// Constants.PACKAGE_NODE);
+		// PackageNodeSkin skin = (PackageNodeSkin)
+		// graphEditor.getSkinLookup().lookupNode(node);
+		// skin.setName(pack.getName());
+		//
+		// notUsed.remove(node);
 	}
 
 	public void mapClass(Class_ class_) {
@@ -102,7 +111,7 @@ public class GraphicEditorClass extends GraphicEditor {
 		skin.setName(class_.getName());
 
 		int connectorCount = 0;
-		
+
 		for (Property p : UmlFrameworkWrapper.getAttributesNoDefault(class_)) {
 			mapAttribute(skin, p);
 			connectorCount++;
@@ -115,17 +124,18 @@ public class GraphicEditorClass extends GraphicEditor {
 			mapActivity(skin, a);
 			connectorCount++;
 		}
-		
-		if (connectorCount < 4) connectorCount = 4;
+
+		if (connectorCount < 4)
+			connectorCount = 4;
 		connectorCount = connectorCount - node.getConnectors().size();
 		for (int i = 0; i < connectorCount; i++) {
 			addConnector(node, Constants.RIGHT_CONNECTOR);
 			addConnector(node, Constants.LEFT_CONNECTOR);
 		}
-		
-		//addConnector(node, Constants.TOP_CONNECTOR);
-		//addConnector(node, Constants.BOTTOM_CONNECTOR);
-		
+
+		// addConnector(node, Constants.TOP_CONNECTOR);
+		// addConnector(node, Constants.BOTTOM_CONNECTOR);
+
 		notUsed.remove(node);
 	}
 
@@ -140,17 +150,19 @@ public class GraphicEditorClass extends GraphicEditor {
 	protected void mapActivity(ClassNodeSkin skin, Activity a) {
 		skin.addOperation(UmlWrapper.getActivityString(a));
 	}
-	
+
 	protected void mapInheritance(Class_ class_, Class_ super_) {
 		GNode sourceNode = fingNode(class_.getQualifiedName());
-		if (sourceNode == null) return;
+		if (sourceNode == null)
+			return;
 		GConnector sourceConnector = findBestConnector(sourceNode);
-		
+
 		GNode targetNode = fingNode(super_.getQualifiedName());
-		if (targetNode == null) return;
+		if (targetNode == null)
+			return;
 		GConnector targetConnector = findBestConnector(targetNode, sourceConnector);
-		
-		String id = sourceNode.getId() + "->" + targetNode.getId();			
+
+		String id = sourceNode.getId() + "->" + targetNode.getId();
 		if (findConnection(id) == null) {
 			GConnection con = addGeneralizationConnection(sourceConnector, targetConnector);
 			con.setId(id);

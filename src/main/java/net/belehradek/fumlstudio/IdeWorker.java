@@ -1,23 +1,37 @@
 package net.belehradek.fumlstudio;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class IdeWorker {
+public class IdeWorker {
 
 	protected Queue<IdeWorkerTask> tasks = new LinkedList<>();
 
 	protected AtomicBoolean running = new AtomicBoolean(false);
 
-	public IdeWorker() {
-		running.set(false);
+	private List<IdeWorkerTaskChangeEvent> onChange = new ArrayList<>();
+    public void addOnChangeListener(IdeWorkerTaskChangeEvent l) {
+    	onChange.add(l);
+    }
+    public void change(IdeWorkerTask task, boolean done) {
+        for (IdeWorkerTaskChangeEvent l : onChange)
+            l.chnageState(task, done);
+    }
+    
+	
+	private static IdeWorker instance = null;
+	private IdeWorker() {
 	}
-
-	public abstract void beforeStart(IdeWorkerTask task);
-
-	public abstract void afterDone(IdeWorkerTask task);
+	public static IdeWorker getInstance() {
+	      if(instance == null) {
+	         instance = new IdeWorker();
+	      }
+	      return instance;
+	   }
 
 	public void addTask(IdeWorkerTask task) {
 		tasks.add(task);
@@ -35,16 +49,16 @@ public abstract class IdeWorker {
 		try {
 			IdeWorkerTask t = tasks.poll();
 			while (t != null) {
-				beforeStart(t);
+				change(t, false);
 				t.work();
-				afterDone(t);
+				change(t, true);
 				t = tasks.poll();
 			}
 		} catch (Exception e) {
 
 		} finally {
 			running.set(false);
-			afterDone(null);
+			change(null, true);
 		}
 	}
 }
