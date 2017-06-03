@@ -106,6 +106,8 @@ public class fUmlStudioController {
 	protected IdeWorker ideWorker;
 
 	public fUmlStudioController() {
+		ideWorker = IdeWorker.getInstance();
+		
 		projectTree = new ProjectTreeController();
 		EventRouter.registerHandler(projectTree, new EventHandler<EventProjectElement>() {
 			@Override

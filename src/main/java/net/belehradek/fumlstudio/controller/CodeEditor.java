@@ -1,33 +1,24 @@
 package net.belehradek.fumlstudio.controller;
 
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
-import org.eclipse.fx.code.editor.fx.TextEditor;
+import org.eclipse.fx.code.editor.LocalSourceFileInput;
 import org.eclipse.fx.code.editor.services.InputDocument;
 import org.eclipse.fx.core.event.EventBus;
 import org.eclipse.fx.core.event.SimpleEventBus;
-import org.eclipse.jface.text.DocumentEvent;
-import org.eclipse.jface.text.IDocumentListener;
-import org.eclipse.jface.text.source.SourceViewer;
-import org.eclipse.fx.code.editor.SourceFileInput;
-import org.eclipse.fx.code.editor.LocalSourceFileInput;
-import org.eclipse.fx.code.editor.StringInput;
+import org.eclipse.fx.text.ui.source.SourceViewer;
 
-import javafx.event.Event;
 import javafx.scene.Node;
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.function.Consumer;
-
 import net.belehradek.fumlstudio.project.IProjectElement;
 
 public class CodeEditor extends ProjectElementEditor {
 
 	protected SourceViewer viewer;
 	protected IProjectElement projectElement;
-	protected EventBus eventBus = new SimpleEventBus();
+	
+	protected EventBus bus = new SimpleEventBus();
 	
 	public CodeEditor() {
 		super();
@@ -69,18 +60,20 @@ public class CodeEditor extends ProjectElementEditor {
 	@Override
 	public void load() {
         Path path = Paths.get(projectElement.getFile().getPath());
-        viewer.setDocument(new InputDocument(new LocalSourceFileInput(path, eventBus)));
         
-        viewer.getDocument().addDocumentListener(new IDocumentListener() {
-			@Override
-			public void documentChanged(DocumentEvent event) {
-				// TODO Auto-generated method stub
-			}
-			
-			@Override
-			public void documentAboutToBeChanged(DocumentEvent event) {
-
-			}
-		});
+        viewer.setDocument(new InputDocument(new LocalSourceFileInput(path, bus), bus));
+        
+//        viewer.setDocument(new InputDocument(new LocalSourceFileInput(path, null)));
+//        viewer.getDocument().addDocumentListener(new IDocumentListener() {
+//			@Override
+//			public void documentChanged(DocumentEvent event) {
+//				// TODO Auto-generated method stub
+//			}
+//			
+//			@Override
+//			public void documentAboutToBeChanged(DocumentEvent event) {
+//
+//			}
+//		});
 	}
 }
